@@ -1,4 +1,5 @@
 import type { Rte } from "../rte/ports";
+import { browserLibrary } from "./browser/library";
 import { compute } from "./compute";
 import { offline } from "./offline";
 import { supabaseAuth } from "./supabase/auth";
@@ -12,7 +13,8 @@ import { supabaseSolves } from "./supabase/solves";
 /** The basic software: real implementations of every RTE port. */
 export function createRte(): Rte {
   const client = supabaseClient;
-  if (!client) return { configured: false, ...offline, ...compute };
+  const library = browserLibrary();
+  if (!client) return { configured: false, ...offline, ...compute, library };
   return {
     configured: true,
     auth: supabaseAuth(client),
@@ -23,5 +25,6 @@ export function createRte(): Rte {
     players: supabasePlayers(client),
     solves: supabaseSolves(client),
     ...compute,
+    library,
   };
 }

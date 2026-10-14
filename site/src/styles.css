@@ -709,3 +709,56 @@ dialog.arena.race { width: min(1180px, calc(100vw - 24px)); }
 .declined-list .invited-chips { margin-top: 8px; }
 .quest-check:disabled { cursor: not-allowed; opacity: 0.45; }
 .quest.done .quest-check:disabled { cursor: default; opacity: 1; }
+
+/* Ask the course */
+.ask-chat { display: grid; gap: 14px; }
+.ask-chat .panel-head { margin-bottom: 0; align-items: center; }
+.ask-empty { display: grid; gap: 8px; padding: 6px 0; }
+.ask-empty p { margin: 0; }
+.ask-turns { list-style: none; margin: 0; padding: 0; display: grid; gap: 22px; }
+.ask-turn { display: grid; gap: 10px; }
+.bubble { margin: 0; padding: 10px 14px; border-radius: 16px; border: 2px solid var(--edge); line-height: 1.55; max-width: 92%; white-space: pre-wrap; }
+.bubble.me { justify-self: end; background: var(--cobalt); color: #fff; border-bottom-right-radius: 4px; }
+.bubble.bot { justify-self: start; background: var(--card-2); border-bottom-left-radius: 4px; }
+.bubble.streaming::after { content: "▍"; color: var(--cobalt); animation: blink 0.9s steps(1) infinite; }
+.cite { display: inline-grid; place-items: center; min-width: 20px; height: 20px; padding: 0 5px; margin: 0 2px; border-radius: 6px; background: var(--sun); color: #17183a; font: 700 12px var(--font-mono); text-decoration: none; vertical-align: 1px; border: 1.5px solid var(--edge); }
+a.cite:hover { background: var(--cobalt); color: #fff; }
+.source-cards { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.source-cards li { border: 2px solid var(--dots); border-radius: 12px; padding: 8px 12px; background: var(--card); scroll-margin: 120px; }
+.source-cards li:target, .source-cards li:focus-within { border-color: var(--cobalt); }
+.source-cards p { margin: 4px 0 0; font-size: 14px; color: var(--muted); }
+.source-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 14px; }
+.source-head a { margin-left: auto; font-weight: 700; font-size: 13px; }
+.kind-tag { font: 600 11px var(--font-mono); text-transform: uppercase; letter-spacing: 0.06em; border: 2px solid var(--edge); border-radius: 999px; padding: 0 8px; }
+.kind-tag.lecture { background: var(--mint); color: #fff; }
+.kind-tag.note { background: var(--pink); color: #17183a; }
+.pipeline summary { cursor: pointer; font-weight: 700; font-size: 14px; color: var(--muted); }
+.pipeline-steps { margin: 10px 0 0; padding-left: 22px; display: grid; gap: 12px; font-size: 14px; }
+.pipeline-steps > li { display: grid; gap: 4px; }
+.hit-list { margin: 0; padding-left: 20px; display: grid; gap: 2px; }
+.hit-list li { display: flex; justify-content: space-between; gap: 12px; }
+.hit-list code, .fusion-table code { font: 12px var(--font-mono); color: var(--muted); }
+.fusion-table { width: 100%; border-collapse: collapse; }
+.fusion-table th, .fusion-table td { text-align: left; padding: 4px 8px; border-bottom: 1.5px dashed var(--dots); }
+.fusion-table th { font: 600 11px var(--font-mono); text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+.fusion-table tr.picked td:first-child { font-weight: 700; }
+.fusion-table .solved-pill { margin-left: 6px; }
+.prompt-view { margin: 0; padding: 10px 12px; max-height: 280px; overflow: auto; font: 12px/1.5 var(--font-mono); background: var(--card-2); border-radius: 10px; white-space: pre-wrap; }
+.ask-form { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; }
+.ask-options { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
+.ask-options .tok-toggle { margin-left: 0; }
+.ask-notes { display: grid; gap: 10px; }
+.ask-notes .panel-head { margin-bottom: 0; }
+.ask-notes p { margin: 0; }
+.file-pick { position: relative; justify-self: start; cursor: pointer; }
+.file-pick input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.paste-note { display: grid; gap: 8px; }
+.paste-note .lab-textarea { margin-top: 0; }
+.paste-note button { justify-self: start; }
+.note-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.note-list li { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 10px; padding: 6px 10px; border: 2px solid var(--dots); border-radius: 10px; }
+.note-list li span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; }
+@media (max-width: 560px) {
+  .bubble { max-width: 100%; }
+  .fusion-table th:nth-child(2), .fusion-table td:nth-child(2), .fusion-table th:nth-child(3), .fusion-table td:nth-child(3) { display: none; }
+}

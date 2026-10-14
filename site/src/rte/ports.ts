@@ -11,6 +11,7 @@ import type { CellOutput, KernelState } from "../swc/logic/lab/kernel";
 import type { ChatMessage, LlmCallbacks, LlmDevice } from "../swc/logic/lab/llm";
 import type { Tokenized } from "../swc/logic/lab/tokenizer";
 import type { Vec } from "../swc/logic/lab/vectors";
+import type { PersonalNote } from "../swc/logic/ask/documents";
 import type { AuthSession, ChallengeSolve, DuelGraded, DuelStart, GradedQuiz, OpenQuiz, Outcome, PlayersOverview, Profile, RaceSubmitted } from "../swc/logic/types";
 
 /** Stops a subscription. */
@@ -123,6 +124,17 @@ export interface LlmPort {
   stop(): void;
 }
 
+// ── Local library: data that stays in this browser only ──────────────────────────────────────────────
+export interface LibraryPort {
+  /** The player's own notes for "Ask the course" (never uploaded anywhere). */
+  loadNotes(): Promise<readonly PersonalNote[]>;
+  saveNote(note: PersonalNote): Promise<void>;
+  deleteNote(id: string): Promise<void>;
+  /** Cached embeddings by content key, so text is embedded only once. Missing keys are absent. */
+  getVectors(keys: readonly string[]): Promise<ReadonlyMap<string, Vec>>;
+  putVectors(entries: ReadonlyMap<string, Vec>): Promise<void>;
+}
+
 /** Everything the application can reach. One instance per app, built in app/. */
 export interface Rte {
   /** False when the site was built without database settings (it then only shows a notice). */
@@ -139,4 +151,5 @@ export interface Rte {
   readonly embedder: EmbedPort;
   readonly tokenizer: TokenizerPort;
   readonly llm: LlmPort;
+  readonly library: LibraryPort;
 }

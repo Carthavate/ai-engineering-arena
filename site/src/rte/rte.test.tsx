@@ -9,12 +9,13 @@ import type { Rte } from "./ports";
 import { RteProvider } from "./RteContext";
 import { useProgress } from "./useProgress";
 import { useSolves } from "./useSolves";
+import { useAskCourse } from "./useAskCourse";
 
 /** A fake Rte: only the ports a test touches need real behavior. */
 function fakeRte(overrides: Partial<Rte>): Rte {
   const unused = new Proxy({}, { get: () => () => { throw new Error("port not faked in this test"); } });
   return { configured: true, ...(Object.fromEntries(
-    ["auth", "progress", "quizzes", "duels", "live", "players", "solves", "python", "kernel", "embedder", "tokenizer", "llm"]
+    ["auth", "progress", "quizzes", "duels", "live", "players", "solves", "python", "kernel", "embedder", "tokenizer", "llm", "library"]
       .map((k) => [k, unused]),
   ) as unknown as Omit<Rte, "configured">), ...overrides };
 }
@@ -66,5 +67,84 @@ describe("useProgress through the ProgressPort", () => {
     await act(async () => { await result.current.markDone("u", "rag-2"); });
     expect("rag-2" in (result.current.progress.u ?? {})).toBe(false);
     expect(result.current.error).toBe("Pass the quiz first");
+  });
+});
+
+describe("useAskCourse through fake models", () => {
+  // A toy embedding: one dimension per keyword, so similar wording gives similar vectors.
+  const VOCAB = ["rank", "fusion", "bm25", "keyword", "cosine", "chunk", "overlap", "rerank", "my"];
+  const toyEmbed = (t: string) => VOCAB.map((w) => (t.toLowerCase().includes(w) ? 1 : 0.01));
+
+  function rteWithModels(calls: { embedded: number; generated: string[] }) {
+    const store = new Map<string, readonly number[]>();
+    return fakeRte({
+      embedder: {
+        embed: async (texts) => {
+          calls.embedded += texts.length;
+          return texts.map(toyEmbed);
+        },
+      },
+      llm: {
+        load: async () => "wasm",
+        generate: async (messages, _max, cb) => {
+          const last = messages.at(-1)!.content;
+          calls.generated.push(last);
+          const text = last.startsWith("Conversation:") ? "What is the k constant in reciprocal rank fusion?" : "RRF adds 1/(k+rank) [1].";
+          cb?.onText?.(text);
+          return text;
+        },
+        stop: () => undefined,
+      },
+      library: {
+        loadNotes: async () => [],
+        saveNote: async () => undefined,
+        deleteNote: async () => undefined,
+        getVectors: async (keys) => new Map(keys.flatMap((k) => (store.has(k) ? [[k, store.get(k)!] as const] : []))),
+        putVectors: async (entries) => entries.forEach((v, k) => store.set(k, v)),
+      },
+    });
+  }
+
+  it("indexes the lectures once, retrieves the RRF lecture and answers with citations", async () => {
+    const calls = { embedded: 0, generated: [] as string[] };
+    const rte = rteWithModels(calls);
+    const { result } = renderHook(() => useAskCourse(), { wrapper: wrapper(rte) });
+    await waitFor(() => expect(result.current.index.state).toBe("ready"));
+    expect(result.current.index.embedded).toBe(result.current.index.total);
+
+    await act(async () => { await result.current.ask("How does reciprocal rank fusion work?", true); });
+    const turn = result.current.turns[0];
+    expect(turn.status).toBe("done");
+    expect(turn.sources.some((c) => c.sourceId === "rag-15")).toBe(true);
+    expect(turn.trace?.keyword.length).toBeGreaterThan(0);
+    expect(turn.answer).toBe("RRF adds 1/(k+rank) [1].");
+    expect(turn.prompt?.at(-1)?.content).toMatch(/^Sources:\n\[1\]/);
+  });
+
+  it("rewrites a follow-up into a standalone question before searching (lesson #7)", async () => {
+    const calls = { embedded: 0, generated: [] as string[] };
+    const { result } = renderHook(() => useAskCourse(), { wrapper: wrapper(rteWithModels(calls)) });
+    await waitFor(() => expect(result.current.index.state).toBe("ready"));
+    await act(async () => { await result.current.ask("What is reciprocal rank fusion?", true); });
+    await act(async () => { await result.current.ask("and its k?", true); });
+    expect(result.current.turns[1].searchQuery).toBe("What is the k constant in reciprocal rank fusion?");
+  });
+
+  it("can search without the AI, and adds personal notes to the index", async () => {
+    const calls = { embedded: 0, generated: [] as string[] };
+    const { result } = renderHook(() => useAskCourse(), { wrapper: wrapper(rteWithModels(calls)) });
+    await waitFor(() => expect(result.current.index.state).toBe("ready"));
+    const lectures = result.current.index.total;
+
+    await act(async () => { await result.current.addNotes([{ title: "My BM25 notes", text: "## keyword\nmy bm25 cheat sheet" }]); });
+    await waitFor(() => expect(result.current.index.total).toBe(lectures + 1));
+    await waitFor(() => expect(result.current.index.state).toBe("ready"));
+
+    await act(async () => { await result.current.ask("my bm25 keyword notes", false); });
+    const turn = result.current.turns[0];
+    expect(turn.status).toBe("done");
+    expect(turn.answer).toBe("");
+    expect(turn.sources[0].kind).toBe("note");
+    expect(calls.generated).toHaveLength(0);
   });
 });

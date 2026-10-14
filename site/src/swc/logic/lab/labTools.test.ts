@@ -30,7 +30,7 @@ describe("tokenizer helpers", () => {
 
 describe("lab routes", () => {
   it("never gives a challenge the id of a Lab tab", () => {
-    const tabs = ["playground", "tokenizer", "scratchpad"];
+    const tabs = ["playground", "tokenizer", "scratchpad", "ask"];
     expect(CHALLENGES.filter((c) => tabs.includes(c.id))).toEqual([]);
   });
 });
