@@ -120,6 +120,7 @@ All ports are defined in [`site/src/rte/ports.ts`](../site/src/rte/ports.ts). Li
 | `SolvesPort` | challenge solves | `record` | `bsw/supabase/solves.ts` |
 | `PythonPort`, `KernelPort` | — | run challenge tests, run notebook cells | `bsw/compute/` (Pyodide workers) |
 | `EmbedPort`, `TokenizerPort`, `LlmPort` | — | embed, tokenize, generate | `bsw/compute/` (transformers.js workers) |
+| `LibraryPort` | personal notes, cached embeddings | save/delete notes, store vectors | `bsw/browser/library.ts` (IndexedDB, never uploaded) |
 
 Without database settings, `createRte()` wires `bsw/offline.ts` instead: reads come back empty and every action explains why.
 
@@ -150,6 +151,29 @@ sequenceDiagram
   DB->>DB: trigger: a pass (4/5) completes the lecture
   DB-->>A: realtime: done, scores, XP
   DB-->>B: realtime: done, scores, XP
+```
+
+### Ask the course (RAG in the browser)
+
+```mermaid
+sequenceDiagram
+  participant UI as AskCourse
+  participant H as useAskCourse (RTE)
+  participant L as LibraryPort (IndexedDB)
+  participant E as EmbedPort (MiniLM worker)
+  participant M as LlmPort (Qwen2.5 worker)
+  H->>L: load notes + cached vectors
+  H->>E: embed only uncached chunks (lecture notes + your notes)
+  H->>L: cache new vectors
+  UI->>H: ask(question)
+  opt follow-up with history (lesson #7)
+    H->>M: rewrite into a standalone question
+  end
+  H->>E: embed the question
+  H->>H: BM25 + cosine search, reciprocal rank fusion (swc/logic/ask)
+  H->>M: grounded prompt with the top 4 chunks
+  M-->>UI: streamed answer
+  H->>H: post-hoc citations: each sentence matched to its best source
 ```
 
 ### Passing a quiz completes a lecture

@@ -11,3 +11,4 @@
 | 0007 | [Hand-written question bank instead of AI-generated quizzes](0007-question-bank-not-llm-quizzes.md) | 2026-10-04 |
 | 0008 | [A lecture completes only by passing its quiz, and stays done](0008-quiz-pass-completes-lessons.md) | 2026-10-08 |
 | 0009 | [Players join by GitHub identity, approved by admins, without repo access](0009-membership-by-github-identity.md) | 2026-10-06 |
+| 0010 | [Ask the course is RAG in the browser over our own notes](0010-ask-the-course-browser-rag.md) | 2026-10-14 |

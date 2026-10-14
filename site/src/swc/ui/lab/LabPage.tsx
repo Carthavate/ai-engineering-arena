@@ -4,6 +4,7 @@ import { href } from "../../logic/route";
 import { Avatar } from "../components/Avatar";
 import { CHALLENGES, findChallenge } from "../../logic/lab/challenges";
 import { ChallengeView } from "./ChallengeView";
+import { AskCourse } from "./AskCourse";
 import { Playground } from "./Playground";
 import { RacePanel } from "./RacePanel";
 import { Scratchpad } from "./Scratchpad";
@@ -12,6 +13,7 @@ import { TokenizerLab } from "./TokenizerLab";
 /** Lab sub-pages besides challenges (their ids can't be challenge ids). */
 const TABS = [
   { id: "", label: "Coding challenges" },
+  { id: "ask", label: "Ask the course" },
   { id: "scratchpad", label: "Python scratchpad" },
   { id: "playground", label: "Embeddings & RAG" },
   { id: "tokenizer", label: "Tokenizers" },
@@ -76,6 +78,8 @@ export default function LabPage({ data, sub }: { readonly data: LabData; readonl
         <ChallengeView key={challenge.id} challenge={challenge} data={data} />
       ) : tab === "playground" ? (
         <Playground />
+      ) : tab === "ask" ? (
+        <AskCourse />
       ) : tab === "tokenizer" ? (
         <TokenizerLab />
       ) : tab === "scratchpad" ? (

@@ -46,6 +46,7 @@ Friends are welcome to join: sign in with GitHub, and one of us lets you in.
   - Chunk a document and retrieve the chunks that match a question.
   - Watch **a small LLM running on your own GPU** write the answer from those chunks ([transformers.js](https://huggingface.co/docs/transformers.js)).
 - **Tokenizers:** see how GPT-4o, GPT-2, BERT, T5 and others chop up the same text.
+- **Ask the course:** a chatbot that answers from our own notes on every RAG lecture and from your private notes (Notion export or pasted text). It shows the whole pipeline it ran: BM25 keyword search, embedding search, reciprocal rank fusion, the prompt, and citations. That's the RAG course, running in your browser.
 
 ![The roadmap](docs/roadmap.png)
 
