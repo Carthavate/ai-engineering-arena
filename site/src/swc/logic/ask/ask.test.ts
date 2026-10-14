@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { LECTURE_CHUNKS, noteChunks } from "./coursePack";
 import { chunkMarkdown, parseFrontMatter, recursiveSplit, searchableText, sections, textHash } from "./documents";
-import { answerMessages, attribute, citations, cleanStandalone, standaloneMessages } from "./prompt";
+import { answerMessages, attribute, citations, cleanStandalone, standaloneMessages, stripCitations } from "./prompt";
 import { bm25Index, bm25Search, retrieve, rrf, terms, vectorSearch } from "./search";
 
 describe("ingestion", () => {
@@ -89,11 +89,12 @@ describe("retrieval", () => {
     expect(fused.find((f) => f.index === 2)?.ranks).toEqual([null, 2]);
   });
 
-  it("returns a full trace and picks the top fused chunks", () => {
-    const vectors = [[1, 0, 0], [0, 1, 0], [0, 0, 1]];
+  it("returns a full trace and picks only relevant fused chunks", () => {
+    const vectors = [[1, 0, 0], [0.5, 0.5, 0.7], [0, 0, 1]];
     const trace = retrieve("reciprocal rank fusion", [0, 0, 1], bm25Index(docs), vectors, { top: 2 });
-    expect(trace.picked[0]).toBe(2);
-    expect(trace.picked).toHaveLength(2);
+    // Chunk 2 matches by keyword and meaning; chunk 1 only by meaning (cosine 0.7, above the floor);
+    // chunk 0 is unrelated (cosine 0, no keyword) and is never picked.
+    expect(trace.picked).toEqual([2, 1]);
     expect(trace.keyword.length).toBeGreaterThan(0);
     expect(trace.vector).toHaveLength(3);
   });
@@ -129,5 +130,42 @@ describe("prompts", () => {
     expect(added).toBe(true);
     expect(text).toBe("Chunk overlap repeats text between chunks [2]. BM25 matches exact product names [1]! Nice weather.");
     expect(attribute("Already cited [1].", sources)).toEqual({ text: "Already cited [1].", added: false });
+  });
+});
+
+describe("review fixes", () => {
+  it("never reads headings inside fenced code, keeps 'C#', and chains an empty parent heading", () => {
+    expect(sections("Intro\n```python\n# load the model\nx = 1\n```\nafter")).toEqual([
+      { heading: "", body: "Intro\n```python\n# load the model\nx = 1\n```\nafter" },
+    ]);
+    expect(sections("## Learning C#\nbody")[0].heading).toBe("Learning C#");
+    expect(sections("# Week 1\n## Chroma\nStores vectors.")).toEqual([{ heading: "Week 1 › Chroma", body: "Stores vectors." }]);
+  });
+
+  it("tokenizes accents, other scripts and possessives", () => {
+    expect(terms("Génération augmentée")).toEqual(["generation", "augmentee"]);
+    expect(terms("What's RRF's k?")).toEqual(["rrf", "k"]);
+    expect(terms("مرحبا بكم")).toEqual(["مرحبا", "بكم"]);
+  });
+
+  it("returns no sources for off-topic questions (relevance floor)", () => {
+    const idx = bm25Index(["BM25 keyword search", "cosine similarity of vectors"]);
+    const trace = retrieve("weather in Tunis", [0, 0, 1], idx, [[1, 0, 0], [0, 1, 0]]);
+    expect(trace.vector).toHaveLength(2);
+    expect(trace.picked).toEqual([]);
+  });
+
+  it("keeps line breaks and list items when matching citations, and drops invalid markers", () => {
+    const sources = [
+      chunkMarkdown({ kind: "lecture", sourceId: "rag-16", title: "#16" }, "## BM25\nBM25 keyword search matches exact terms.")[0],
+      chunkMarkdown({ kind: "lecture", sourceId: "rag-15", title: "#15" }, "## RRF\nReciprocal rank fusion merges ranked lists.")[0],
+    ];
+    const { text } = attribute("Steps:\n\n- BM25 keyword search matches exact terms\n- reciprocal rank fusion merges ranked lists", sources);
+    expect(text).toBe("Steps:\n\n- BM25 keyword search matches exact terms [1]\n- reciprocal rank fusion merges ranked lists [2]");
+    expect(attribute("Fusion merges lists [7].", sources).text).not.toContain("[7]");
+  });
+
+  it("strips citation markers before reusing an answer as history", () => {
+    expect(stripCitations("RRF merges lists [1]. BM25 [2] too.")).toBe("RRF merges lists. BM25 too.");
   });
 });

@@ -128,11 +128,14 @@ export interface LlmPort {
 export interface LibraryPort {
   /** The player's own notes for "Ask the course" (never uploaded anywhere). */
   loadNotes(): Promise<readonly PersonalNote[]>;
-  saveNote(note: PersonalNote): Promise<void>;
+  /** True when stored durably; false when storage is blocked and the note lives only until reload. */
+  saveNote(note: PersonalNote): Promise<boolean>;
   deleteNote(id: string): Promise<void>;
   /** Cached embeddings by content key, so text is embedded only once. Missing keys are absent. */
   getVectors(keys: readonly string[]): Promise<ReadonlyMap<string, Vec>>;
   putVectors(entries: ReadonlyMap<string, Vec>): Promise<void>;
+  /** Forget embeddings (e.g. of a deleted note: embeddings can partly reveal the text). */
+  deleteVectors(keys: readonly string[]): Promise<void>;
 }
 
 /** Everything the application can reach. One instance per app, built in app/. */

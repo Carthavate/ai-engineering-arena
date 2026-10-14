@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
-import { useAskCourse, type AskTurn } from "../../../rte/useAskCourse";
+import { useAskCourse, type AddNotesResult, type AskTurn } from "../../../rte/useAskCourse";
 import type { Chunk } from "../../logic/ask/documents";
 
 const AI_KEY = "ai-eng-lab:ask-ai";
@@ -32,6 +32,10 @@ function noteTitle(fileName: string): string {
   return fileName.replace(/\.(md|markdown|txt)$/i, "").replace(/\s+[0-9a-f]{32}$/i, "").trim();
 }
 
+function reducedMotion(): boolean {
+  return typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+}
+
 function where(c: Chunk): string {
   return `${c.title}${c.heading ? ` › ${c.heading}` : ""}`;
 }
@@ -42,7 +46,14 @@ function withCitations(answer: string, turnId: number, sourceCount: number): Rea
     const m = /^\[(\d+)\]$/.exec(part);
     const n = m ? Number(m[1]) : 0;
     return n >= 1 && n <= sourceCount
-      ? <a key={i} className="cite" href={`#src-${turnId}-${n}`} onClick={(e) => { e.preventDefault(); document.getElementById(`src-${turnId}-${n}`)?.scrollIntoView({ behavior: "smooth", block: "center" }); }}>{n}</a>
+      ? (
+        <button key={i} type="button" className="cite" aria-label={`Source ${n}`}
+          onClick={() => {
+            const card = document.getElementById(`src-${turnId}-${n}`);
+            card?.scrollIntoView({ behavior: reducedMotion() ? "auto" : "smooth", block: "center" });
+            card?.focus({ preventScroll: true });
+          }}>{n}</button>
+      )
       : <span key={i}>{part}</span>;
   });
 }
@@ -105,21 +116,26 @@ function Pipeline({ turn }: { readonly turn: AskTurn }) {
 function Turn({ turn }: { readonly turn: AskTurn }) {
   return (
     <li className="ask-turn">
-      <p className="bubble me">{turn.question}</p>
+      <p className="bubble me"><span className="sr-only">You: </span>{turn.question}</p>
       {turn.status === "searching" && <p className="bubble bot muted">Searching the course…</p>}
       {turn.status === "error" && <p className="bubble bot form-error">{turn.error}</p>}
       {(turn.status === "answering" || turn.answer) && (
-        <p className={`bubble bot${turn.status === "answering" ? " streaming" : ""}`} aria-live="polite">
+        <p className={`bubble bot${turn.status === "answering" ? " streaming" : ""}`} aria-busy={turn.status === "answering"}>
+          <span className="sr-only">Assistant: </span>
           {turn.answer ? withCitations(turn.answer, turn.id, turn.sources.length) : "Writing the answer…"}
         </p>
       )}
+      {turn.status === "stopped" && <p className="bubble bot muted">Stopped.</p>}
+      {turn.status === "done" && turn.trace && turn.sources.length === 0 && (
+        <p className="bubble bot">Nothing in the course notes or your notes matches that. Try other words, or ask about a RAG topic.</p>
+      )}
       {turn.status === "done" && !turn.answer && turn.sources.length > 0 && (
-        <p className="bubble bot">Here are the most relevant passages. Turn on the local AI to get a written answer.</p>
+        <p className="bubble bot">{turn.usedAi ? "The AI didn't write an answer this time; here are the most relevant passages." : "Here are the most relevant passages. Turn on the local AI to get a written answer."}</p>
       )}
       {turn.sources.length > 0 && (
         <ol className="source-cards">
           {turn.sources.map((c, i) => (
-            <li key={c.id} id={`src-${turn.id}-${i + 1}`}>
+            <li key={c.id} id={`src-${turn.id}-${i + 1}`} tabIndex={-1}>
               <div className="source-head">
                 <span className="cite static">{i + 1}</span>
                 <span className={`kind-tag ${c.kind}`}>{c.kind === "lecture" ? "Lecture" : "Your note"}</span>
@@ -139,24 +155,44 @@ function Turn({ turn }: { readonly turn: AskTurn }) {
 function NotesPanel({ course }: { readonly course: ReturnType<typeof useAskCourse> }) {
   const [title, setTitle] = useState("");
   const [text, setText] = useState("");
-  const [message, setMessage] = useState<string | null>(null);
+  const [message, setMessage] = useState<{ readonly ok: boolean; readonly text: string } | null>(null);
 
-  const onFiles = async (files: FileList | null) => {
-    if (!files?.length) return;
-    const ok = [...files].filter((f) => f.size <= MAX_FILE_BYTES && /\.(md|markdown|txt)$/i.test(f.name));
-    const notes = await Promise.all(ok.map(async (f) => ({ title: noteTitle(f.name), text: await f.text() })));
-    await course.addNotes(notes);
-    const skipped = files.length - ok.length;
-    setMessage(`Added ${notes.length} note${notes.length === 1 ? "" : "s"}.${skipped ? ` Skipped ${skipped} (only .md / .txt up to 2 MB).` : ""}`);
+  const report = (r: AddNotesResult, unreadable = 0, wrongType = 0) => {
+    const parts = [`Added ${r.added} note${r.added === 1 ? "" : "s"}.`];
+    if (r.duplicates) parts.push(`${r.duplicates} already there.`);
+    if (wrongType) parts.push(`Skipped ${wrongType} (only .md / .txt up to 2 MB).`);
+    if (unreadable) parts.push(`Couldn't read ${unreadable} (is it only in the cloud?).`);
+    if (r.overLimit) parts.push(`${r.overLimit} didn't fit: notes are capped at about 3 MB of text in total.`);
+    if (r.sessionOnly) parts.push(`This browser blocks storage, so ${r.sessionOnly === r.added ? "they're" : `${r.sessionOnly} are`} kept only until you reload.`);
+    setMessage({ ok: !r.sessionOnly && !r.overLimit && !unreadable, text: parts.join(" ") });
+  };
+
+  const onFiles = async (list: FileList | null) => {
+    // Copy first: clearing the input empties the live FileList.
+    const files = list ? [...list] : [];
+    if (files.length === 0) return;
+    const ok = files.filter((f) => f.size <= MAX_FILE_BYTES && /\.(md|markdown|txt)$/i.test(f.name));
+    const read = await Promise.allSettled(ok.map(async (f) => ({ title: noteTitle(f.name), text: await f.text() })));
+    const notes = read.flatMap((r) => (r.status === "fulfilled" ? [r.value] : []));
+    try {
+      report(await course.addNotes(notes), read.length - notes.length, files.length - ok.length);
+    } catch (err) {
+      console.error("Adding notes failed", err);
+      setMessage({ ok: false, text: "Couldn't add those notes. Try again." });
+    }
   };
 
   const onPaste = async (e: FormEvent) => {
     e.preventDefault();
     if (!text.trim()) return;
-    await course.addNotes([{ title: title || "Pasted note", text }]);
-    setTitle("");
-    setText("");
-    setMessage("Note added.");
+    try {
+      report(await course.addNotes([{ title: title || "Pasted note", text }]));
+      setTitle("");
+      setText("");
+    } catch (err) {
+      console.error("Adding a note failed", err);
+      setMessage({ ok: false, text: "Couldn't add that note. Try again." });
+    }
   };
 
   return (
@@ -166,7 +202,7 @@ function NotesPanel({ course }: { readonly course: ReturnType<typeof useAskCours
         <span className="admin-tag">Private · this browser only</span>
       </div>
       <p className="muted small-text">
-        Add your own notes and the assistant searches them too. Export your Notion pages as Markdown and pick the files, or paste text. They're stored only in this browser and never uploaded.
+        Add your own notes and the assistant searches them too. Export your Notion pages as Markdown and pick the files, or paste text. They're stored only in this browser and never uploaded; removing a note also removes its embeddings.
       </p>
       <label className="btn btn-ghost btn-small file-pick">
         Add .md / .txt files
@@ -179,7 +215,7 @@ function NotesPanel({ course }: { readonly course: ReturnType<typeof useAskCours
         <textarea id="note-text" className="lab-textarea" rows={4} placeholder="…or paste a note here" value={text} onChange={(e) => setText(e.target.value)} />
         <button type="submit" className="btn btn-primary btn-small" disabled={!text.trim()}>Add note</button>
       </form>
-      {message && <p className="players-ok" role="status">{message}</p>}
+      {message && <p className={message.ok ? "players-ok" : "form-error"} role="status">{message.text}</p>}
       {course.notes.length > 0 && (
         <ul className="note-list">
           {course.notes.map((n) => (
@@ -204,11 +240,11 @@ export function AskCourse() {
   const { index, ai, turns, busy } = course;
 
   useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+    if (turns.length > 0) endRef.current?.scrollIntoView({ behavior: reducedMotion() ? "auto" : "smooth", block: "end" });
   }, [turns.length]);
 
   const submit = (q: string) => {
-    if (!q.trim() || busy) return;
+    if (!q.trim() || busy || index.state !== "ready") return;
     setQuestion("");
     void course.ask(q, useAi);
   };
@@ -233,14 +269,16 @@ export function AskCourse() {
       <section className="panel ask-chat" aria-labelledby="ask-title">
         <div className="panel-head">
           <h2 id="ask-title" className="panel-title">Ask the course</h2>
-          <span className={`kernel-pill state-${index.state === "ready" ? "idle" : "loading"}`} role="status">{indexLine}</span>
+          <span className={`kernel-pill state-${index.state === "ready" ? "idle" : "loading"}`}>{indexLine}</span>
+          {index.state === "error" && <button type="button" className="btn btn-ghost btn-small" onClick={course.retryIndex}>Retry</button>}
+          <span className="sr-only" role="status">{index.state === "ready" ? "The course is ready for questions." : index.state === "error" ? indexLine : ""}</span>
         </div>
 
         {turns.length === 0 ? (
           <div className="ask-empty">
             <p className="muted">Try one of these:</p>
             <div className="tok-picker">
-              {SUGGESTIONS.map((s) => <button key={s} type="button" className="chip-btn" onClick={() => submit(s)} disabled={busy}>{s}</button>)}
+              {SUGGESTIONS.map((s) => <button key={s} type="button" className="chip-btn" onClick={() => submit(s)} disabled={busy || index.state !== "ready"}>{s}</button>)}
             </div>
           </div>
         ) : (
@@ -251,11 +289,8 @@ export function AskCourse() {
         <form className="ask-form" onSubmit={(e) => { e.preventDefault(); submit(question); }}>
           <label className="sr-only" htmlFor="ask-q">Your question</label>
           <input id="ask-q" className="lab-input" value={question} onChange={(e) => setQuestion(e.target.value)} placeholder="Ask about chunking, retrieval, reranking…" autoComplete="off" />
-          {busy && ai.state !== "loading" ? (
-            <button type="button" className="btn btn-ghost" onClick={course.stop}>Stop</button>
-          ) : (
-            <button type="submit" className="btn btn-primary" disabled={busy || !question.trim()}>Ask</button>
-          )}
+          <button type="submit" className="btn btn-primary" disabled={busy || !question.trim() || index.state !== "ready"}>Ask</button>
+          <button type="button" className="btn btn-ghost" onClick={course.stop} disabled={!busy}>Stop</button>
         </form>
         <div className="ask-options">
           <label className="tok-toggle">
