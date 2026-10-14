@@ -43,20 +43,29 @@ export function parseFrontMatter(md: string): { readonly meta: Readonly<Record<s
   return { meta, body: md.slice(m[0].length) };
 }
 
-/** Markdown sections by heading (#, ##, ###). Text before the first heading gets an empty heading. */
+/**
+ * Markdown sections by heading (#, ##, ###). Text before the first heading gets an empty heading.
+ * Lines inside fenced code (``` or ~~~) are never headings: a Python "# comment" stays code.
+ * A heading with no text of its own is kept as a prefix of the next one ("Week 1 › Chroma").
+ */
 export function sections(md: string): Section[] {
   const out: Section[] = [];
   let heading = "";
   let lines: string[] = [];
+  let fence: string | null = null;
   const flush = () => {
     const body = lines.join("\n").trim();
     if (body) out.push({ heading, body });
+    return Boolean(body);
   };
   for (const line of md.split(/\r?\n/)) {
-    const h = /^#{1,3}\s+(.+?)\s*#*$/.exec(line);
+    const f = /^\s*(```|~~~)/.exec(line);
+    if (f) fence = fence === null ? f[1] : fence === f[1] ? null : fence;
+    // Closing #s count only when separated by a space, so "Learning C#" keeps its #.
+    const h = fence === null && !f ? /^#{1,3}\s+(.+?)(?:\s+#+)?\s*$/.exec(line) : null;
     if (h) {
-      flush();
-      heading = h[1];
+      const hadBody = flush();
+      heading = !hadBody && heading ? `${heading} › ${h[1]}` : h[1];
       lines = [];
     } else {
       lines.push(line);

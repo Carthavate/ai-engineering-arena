@@ -10,7 +10,9 @@ export function norm(a: Vec): number {
   return Math.sqrt(dot(a, a));
 }
 
+/** 0 for vectors of different lengths (e.g. embeddings from another model), never NaN. */
 export function cosine(a: Vec, b: Vec): number {
+  if (a.length !== b.length) return 0;
   const n = norm(a) * norm(b);
   return n === 0 ? 0 : dot(a, b) / n;
 }

@@ -7,9 +7,13 @@ const STOPWORDS = new Set(
     + "them then there these this to was what when where which who why will with you your we our").split(" "),
 );
 
-/** Lowercase words and numbers, without stopwords. */
+/**
+ * Lowercase words and numbers in any script, accents removed ("génération" -> "generation"),
+ * possessives dropped ("RRF's" -> "rrf"), decimals kept ("7.5"), without stopwords.
+ */
 export function terms(text: string): string[] {
-  return (text.toLowerCase().match(/[a-z0-9]+(?:[.'-][a-z0-9]+)*/g) ?? []).filter((t) => !STOPWORDS.has(t));
+  const plain = text.normalize("NFKD").replace(/\p{M}+/gu, "").toLowerCase().replace(/['’]s\b/g, "");
+  return (plain.match(/[\p{L}\p{N}]+(?:\.\p{N}+)*/gu) ?? []).filter((t) => !STOPWORDS.has(t));
 }
 
 export interface Bm25Index {
@@ -100,16 +104,25 @@ export interface RetrievalTrace {
   readonly picked: readonly number[];
 }
 
+/**
+ * Below this cosine similarity, a chunk that no keyword matched is treated as unrelated (MiniLM scores
+ * unrelated sentences around 0 to 0.2). Without a floor, an off-topic question still "finds" k sources.
+ */
+export const MIN_SIMILARITY = 0.25;
+
 export function retrieve(
   query: string,
   queryVector: Vec,
   index: Bm25Index,
   vectors: readonly Vec[],
-  options: { readonly perList?: number; readonly top?: number } = {},
+  options: { readonly perList?: number; readonly top?: number; readonly minSimilarity?: number } = {},
 ): RetrievalTrace {
   const perList = options.perList ?? 8;
+  const floor = options.minSimilarity ?? MIN_SIMILARITY;
   const keyword = bm25Search(index, query, perList);
   const vector = vectorSearch(queryVector, vectors, perList);
   const fused = rrf([vector, keyword]);
-  return { query, keyword, vector, fused, picked: fused.slice(0, options.top ?? 4).map((f) => f.index) };
+  const vectorScore = new Map(vector.map((h) => [h.index, h.score]));
+  const relevant = fused.filter((f) => f.ranks[1] !== null || (vectorScore.get(f.index) ?? 0) >= floor);
+  return { query, keyword, vector, fused, picked: relevant.slice(0, options.top ?? 4).map((f) => f.index) };
 }

@@ -722,7 +722,7 @@ dialog.arena.race { width: min(1180px, calc(100vw - 24px)); }
 .bubble.bot { justify-self: start; background: var(--card-2); border-bottom-left-radius: 4px; }
 .bubble.streaming::after { content: "▍"; color: var(--cobalt); animation: blink 0.9s steps(1) infinite; }
 .cite { display: inline-grid; place-items: center; min-width: 20px; height: 20px; padding: 0 5px; margin: 0 2px; border-radius: 6px; background: var(--sun); color: #17183a; font: 700 12px var(--font-mono); text-decoration: none; vertical-align: 1px; border: 1.5px solid var(--edge); }
-a.cite:hover { background: var(--cobalt); color: #fff; }
+.cite:hover { background: var(--cobalt); color: #fff; }
 .source-cards { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
 .source-cards li { border: 2px solid var(--dots); border-radius: 12px; padding: 8px 12px; background: var(--card); scroll-margin: 120px; }
 .source-cards li:target, .source-cards li:focus-within { border-color: var(--cobalt); }
@@ -730,7 +730,7 @@ a.cite:hover { background: var(--cobalt); color: #fff; }
 .source-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 14px; }
 .source-head a { margin-left: auto; font-weight: 700; font-size: 13px; }
 .kind-tag { font: 600 11px var(--font-mono); text-transform: uppercase; letter-spacing: 0.06em; border: 2px solid var(--edge); border-radius: 999px; padding: 0 8px; }
-.kind-tag.lecture { background: var(--mint); color: #fff; }
+.kind-tag.lecture { background: var(--mint); color: #17183a; }
 .kind-tag.note { background: var(--pink); color: #17183a; }
 .pipeline summary { cursor: pointer; font-weight: 700; font-size: 14px; color: var(--muted); }
 .pipeline-steps { margin: 10px 0 0; padding-left: 22px; display: grid; gap: 12px; font-size: 14px; }
@@ -744,7 +744,9 @@ a.cite:hover { background: var(--cobalt); color: #fff; }
 .fusion-table tr.picked td:first-child { font-weight: 700; }
 .fusion-table .solved-pill { margin-left: 6px; }
 .prompt-view { margin: 0; padding: 10px 12px; max-height: 280px; overflow: auto; font: 12px/1.5 var(--font-mono); background: var(--card-2); border-radius: 10px; white-space: pre-wrap; }
-.ask-form { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; }
+.ask-form { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 10px; }
+button.cite { cursor: pointer; }
+.source-cards li:focus { outline: 3px solid var(--cobalt); outline-offset: 2px; }
 .ask-options { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
 .ask-options .tok-toggle { margin-left: 0; }
 .ask-notes { display: grid; gap: 10px; }
@@ -761,4 +763,8 @@ a.cite:hover { background: var(--cobalt); color: #fff; }
 @media (max-width: 560px) {
   .bubble { max-width: 100%; }
   .fusion-table th:nth-child(2), .fusion-table td:nth-child(2), .fusion-table th:nth-child(3), .fusion-table td:nth-child(3) { display: none; }
+}
+
+@media (prefers-color-scheme: dark) {
+  .bubble.me { color: #10122a; }
 }

@@ -56,24 +56,37 @@ export function citations(answer: string, sourceCount: number): number[] {
 /** Minimum BM25 overlap for a sentence to be credited to a source. */
 const MIN_ATTRIBUTION = 1.5;
 
+/** Remove [n] markers, e.g. from earlier answers before they go back into a prompt with new numbering. */
+export function stripCitations(text: string): string {
+  return text.replace(/\s?\[\d+\]/g, "");
+}
+
 /**
  * Post-hoc attribution: small models rarely cite reliably, so after generation each sentence is credited to
- * the source it overlaps most (BM25 over the sources sent to the model). Answers that already cite are kept.
+ * the source it overlaps most (BM25 over the sources sent to the model). Line breaks and list items are kept;
+ * a list item counts as one unit. Answers that already cite valid sources are kept; invalid markers are removed.
  */
 export function attribute(answer: string, sources: readonly Chunk[]): { readonly text: string; readonly added: boolean } {
-  if (sources.length === 0 || citations(answer, sources.length).length > 0) return { text: answer, added: false };
+  if (sources.length === 0) return { text: answer, added: false };
+  const valid = answer.replace(/\s?\[(\d+)\]/g, (m, n: string) => (Number(n) >= 1 && Number(n) <= sources.length ? m : ""));
+  if (citations(valid, sources.length).length > 0) return { text: valid, added: false };
   const index = bm25Index(sources.map(searchableText));
   let added = false;
-  const text = answer
-    .trim()
-    .split(/(?<=[.!?])\s+/)
-    .map((sentence) => {
-      const [best] = bm25Search(index, sentence, 1);
-      if (!best || best.score < MIN_ATTRIBUTION) return sentence;
-      added = true;
-      const m = /^(.*?)([.!?]*)$/s.exec(sentence)!;
-      return `${m[1]} [${best.index + 1}]${m[2]}`;
+  const credit = (unit: string): string => {
+    const [best] = bm25Search(index, unit, 1);
+    if (!best || best.score < MIN_ATTRIBUTION) return unit;
+    added = true;
+    const m = /^([\s\S]*?)([.!?:;]*\s*)$/.exec(unit)!;
+    return `${m[1]} [${best.index + 1}]${m[2]}`;
+  };
+  const text = valid
+    .split(/(\r?\n+)/)
+    .map((line) => {
+      if (!line.trim()) return line;
+      if (/^\s*(?:[-*•]|\d+[.)])\s/.test(line)) return credit(line);
+      // Sentences: text up to . ! ? followed by a space or the end of the line.
+      return (line.match(/[^.!?]+(?:[.!?]+(?=\s|$)\s*|$)/g) ?? [line]).map(credit).join("");
     })
-    .join(" ");
+    .join("");
   return { text, added };
 }

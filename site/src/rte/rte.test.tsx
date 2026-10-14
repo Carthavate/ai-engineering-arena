@@ -97,8 +97,9 @@ describe("useAskCourse through fake models", () => {
       },
       library: {
         loadNotes: async () => [],
-        saveNote: async () => undefined,
+        saveNote: async () => true,
         deleteNote: async () => undefined,
+        deleteVectors: async (keys) => keys.forEach((k) => store.delete(k)),
         getVectors: async (keys) => new Map(keys.flatMap((k) => (store.has(k) ? [[k, store.get(k)!] as const] : []))),
         putVectors: async (entries) => entries.forEach((v, k) => store.set(k, v)),
       },
@@ -146,5 +147,46 @@ describe("useAskCourse through fake models", () => {
     expect(turn.answer).toBe("");
     expect(turn.sources[0].kind).toBe("note");
     expect(calls.generated).toHaveLength(0);
+  });
+});
+
+describe("useAskCourse controls", () => {
+  const toy = (t: string) => ["rank", "fusion", "chunk", "overlap"].map((w) => (t.toLowerCase().includes(w) ? 1 : 0.01));
+
+  it("stops a turn before generation starts, and skips duplicate notes", async () => {
+    let release: () => void = () => undefined;
+    const gate = new Promise<void>((r) => { release = r; });
+    let generated = 0;
+    const rte = fakeRte({
+      embedder: { embed: async (texts) => texts.map(toy) },
+      llm: {
+        load: async () => { await gate; return "wasm"; },
+        generate: async () => { generated += 1; return "x"; },
+        stop: () => undefined,
+      },
+      library: {
+        loadNotes: async () => [],
+        saveNote: async () => false,
+        deleteNote: async () => undefined,
+        deleteVectors: async () => undefined,
+        getVectors: async () => new Map(),
+        putVectors: async () => undefined,
+      },
+    });
+    const { result } = renderHook(() => useAskCourse(), { wrapper: wrapper(rte) });
+    await waitFor(() => expect(result.current.index.state).toBe("ready"));
+
+    let pending: Promise<void> = Promise.resolve();
+    act(() => { pending = result.current.ask("How does reciprocal rank fusion work?", true); });
+    await waitFor(() => expect(result.current.turns[0]?.status).toBe("answering"));
+    act(() => result.current.stop());
+    await act(async () => { release(); await pending; });
+    expect(result.current.turns[0].status).toBe("stopped");
+    expect(generated).toBe(0);
+
+    let r = await act(async () => result.current.addNotes([{ title: "a", text: "chunk overlap notes" }, { title: "b", text: "chunk overlap notes" }]));
+    expect(r).toMatchObject({ added: 1, duplicates: 1, sessionOnly: 1 });
+    r = await act(async () => result.current.addNotes([{ title: "c", text: "  chunk overlap notes " }]));
+    expect(r).toMatchObject({ added: 0, duplicates: 1 });
   });
 });
