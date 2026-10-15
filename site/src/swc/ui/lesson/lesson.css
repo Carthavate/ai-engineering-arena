@@ -1,13 +1,12 @@
-/* Lesson panel: a right-side drawer over the current page (a full-screen sheet on phones).
+/* Lesson panel: a centered pop-up over the current page (a full-screen sheet on phones).
    Same sticker-arcade tokens as styles.css; loaded with the panel's chunk. */
 dialog.lesson {
-  position: fixed; inset: 0 0 0 auto; margin: 0; padding: 0;
-  width: min(560px, 100vw); max-width: 100vw; height: 100dvh; max-height: 100dvh;
-  border: 0; border-left: var(--border); background: var(--card); color: var(--ink); box-shadow: -8px 0 0 var(--shadow);
+  position: fixed; inset: 0; margin: auto; padding: 0; overflow: hidden;
+  width: min(860px, calc(100vw - 32px)); max-width: none; height: min(920px, calc(100dvh - 40px)); max-height: none;
+  border: var(--border); border-radius: 22px; background: var(--card); color: var(--ink); box-shadow: 8px 8px 0 var(--shadow);
 }
-dialog.lesson[open] { display: flex; flex-direction: column; animation: drawer-in 0.28s cubic-bezier(0.2, 1, 0.4, 1) both; }
-dialog.lesson::backdrop { background: rgb(18 20 41 / 0.45); }
-@keyframes drawer-in { from { transform: translateX(48px); opacity: 0; } }
+dialog.lesson[open] { display: flex; flex-direction: column; animation: pop-in 0.35s cubic-bezier(0.2, 1.3, 0.4, 1) both; }
+dialog.lesson::backdrop { background: rgb(18 20 41 / 0.6); }
 @keyframes sheet-in { from { transform: translateY(48px); opacity: 0; } }
 
 .lesson-head {
@@ -32,8 +31,8 @@ dialog.lesson::backdrop { background: rgb(18 20 41 / 0.45); }
 .lesson-play { position: relative; padding: 0; cursor: pointer; background: #000; }
 .lesson-play img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .lesson-play-icon {
-  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 68px; height: 48px; display: grid; place-items: center;
-  font-size: 22px; background: var(--tomato); color: #fff; border: var(--border); border-radius: 14px; box-shadow: var(--lift-sm);
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); display: inline-flex; align-items: center; gap: 10px; white-space: nowrap;
+  padding: 12px 22px; font: 400 22px var(--font-display); background: var(--tomato); color: #fff; border: var(--border); border-radius: 16px; box-shadow: var(--lift);
   transition: transform 0.12s ease;
 }
 .lesson-play:hover .lesson-play-icon, .lesson-play:focus-visible .lesson-play-icon { transform: translate(-50%, -50%) scale(1.08); }
@@ -67,7 +66,7 @@ dialog.lesson::backdrop { background: rgb(18 20 41 / 0.45); }
 }
 
 @media (max-width: 640px) {
-  dialog.lesson { width: 100vw; border-left: 0; box-shadow: none; }
+  dialog.lesson { width: 100vw; height: 100dvh; border: 0; border-radius: 0; box-shadow: none; }
   dialog.lesson[open] { animation-name: sheet-in; }
   .lesson-head { padding: calc(14px + env(safe-area-inset-top, 0px)) 16px 12px; }
   .lesson-head h2 { font-size: 21px; }
