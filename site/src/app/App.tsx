@@ -23,6 +23,8 @@ import { useRoute } from "../rte/useRoute";
 
 // The Lab pulls in a code editor and is only needed on its own page.
 const LabPage = lazy(() => import("../swc/ui/lab/LabPage"));
+// The lesson panel carries the lecture notes and the Ask pipeline: loaded when a lesson is first opened.
+const LessonPanel = lazy(() => import("../swc/ui/lesson/LessonPanel"));
 
 interface Toast {
   readonly id: number;
@@ -37,7 +39,8 @@ export function App() {
   const quizzes = useQuizzes();
   const duels = useDuels();
   const solveState = useSolves();
-  const route = useRoute();
+  const { view, goToLesson, closeLesson } = useRoute();
+  const route = view.page;
   const [quizItem, setQuizItem] = useState<RoadmapItem | null>(null);
   const [challengeItem, setChallengeItem] = useState<RoadmapItem | null>(null);
   const [hiddenInvites, setHiddenInvites] = useState<ReadonlySet<string>>(new Set());
@@ -172,6 +175,12 @@ export function App() {
           </Suspense>
         )}
       </main>
+
+      {view.lesson && (
+        <Suspense fallback={null}>
+          <LessonPanel itemId={view.lesson} data={data} onGo={goToLesson} onClose={closeLesson} />
+        </Suspense>
+      )}
 
       {quizItem && (
         <QuizDialog

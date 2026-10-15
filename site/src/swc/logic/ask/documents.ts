@@ -23,6 +23,8 @@ export interface PersonalNote {
   readonly title: string;
   readonly text: string;
   readonly addedAt: string;
+  /** Set on the note written in a lesson's panel: the roadmap item it belongs to. */
+  readonly itemId?: string;
 }
 
 export interface Section {

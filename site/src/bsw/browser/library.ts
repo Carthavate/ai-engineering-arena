@@ -42,7 +42,8 @@ function openDb(): Promise<IDBDatabase> {
 
 function isNote(x: unknown): x is PersonalNote {
   const n = x as Partial<PersonalNote> | null;
-  return Boolean(n) && typeof n!.id === "string" && typeof n!.title === "string" && typeof n!.text === "string" && typeof n!.addedAt === "string";
+  return Boolean(n) && typeof n!.id === "string" && typeof n!.title === "string" && typeof n!.text === "string" && typeof n!.addedAt === "string"
+    && (n!.itemId === undefined || typeof n!.itemId === "string");
 }
 
 /** Notes and cached embeddings in IndexedDB: private to this browser, never sent to a server. */

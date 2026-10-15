@@ -215,7 +215,8 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 400; letter-spacing:
 .kind-setup { background: var(--pink); color: #17183a; }
 .quest-phase { font: 600 11px var(--font-mono); color: var(--muted); }
 .xp-chip { font: 600 12px var(--font-mono); color: var(--cobalt); background: var(--card); border: 2px solid currentColor; border-radius: 999px; padding: 0 8px; white-space: nowrap; }
-.quest-title { font-weight: 700; cursor: pointer; overflow-wrap: anywhere; }
+.quest-title { font-weight: 700; overflow-wrap: anywhere; color: var(--ink); text-decoration: none; }
+.quest-title:hover { text-decoration: underline; text-decoration-thickness: 2px; }
 .quest-src { font-size: 13px; }
 .quest-quiz { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 4px; }
 .score { display: inline-flex; align-items: center; gap: 4px; font: 600 12px var(--font-mono); background: var(--card); border: 2px solid var(--dots); border-radius: 999px; padding: 1px 8px 1px 2px; }

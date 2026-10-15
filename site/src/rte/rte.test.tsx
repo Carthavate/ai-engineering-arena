@@ -10,6 +10,10 @@ import { RteProvider } from "./RteContext";
 import { useProgress } from "./useProgress";
 import { useSolves } from "./useSolves";
 import { useAskCourse } from "./useAskCourse";
+import { useLessonNote } from "./useLessonNote";
+import { findRoadmapItem } from "../swc/logic/activity";
+import type { PersonalNote } from "../swc/logic/ask/documents";
+import type { LibraryPort } from "./ports";
 
 /** A fake Rte: only the ports a test touches need real behavior. */
 function fakeRte(overrides: Partial<Rte>): Rte {
@@ -188,5 +192,129 @@ describe("useAskCourse controls", () => {
     expect(r).toMatchObject({ added: 1, duplicates: 1, sessionOnly: 1 });
     r = await act(async () => result.current.addNotes([{ title: "c", text: "  chunk overlap notes " }]));
     expect(r).toMatchObject({ added: 0, duplicates: 1 });
+  });
+});
+
+/** An in-memory LibraryPort that records what was saved and forgotten. */
+function memoryLibrary(initial: readonly PersonalNote[] = []) {
+  const notes = new Map(initial.map((n) => [n.id, n]));
+  const vectors = new Map<string, readonly number[]>();
+  const log = { saved: [] as PersonalNote[], deleted: [] as string[], forgotten: [] as string[] };
+  const port: LibraryPort = {
+    loadNotes: async () => [...notes.values()],
+    saveNote: async (n) => { notes.set(n.id, n); log.saved.push(n); return true; },
+    deleteNote: async (id) => { notes.delete(id); log.deleted.push(id); },
+    getVectors: async (keys) => new Map(keys.flatMap((k) => (vectors.has(k) ? [[k, vectors.get(k)!] as const] : []))),
+    putVectors: async (entries) => entries.forEach((v, k) => vectors.set(k, v)),
+    deleteVectors: async (keys) => { keys.forEach((k) => vectors.delete(k)); log.forgotten.push(...keys); },
+  };
+  return { port, notes, log };
+}
+
+describe("useAskCourse scoped to one lesson", () => {
+  const VOCAB = ["rank", "fusion", "table", "image", "unstructured", "chunk", "my"];
+  const toy = (t: string) => VOCAB.map((w) => (t.toLowerCase().includes(w) ? 1 : 0.01));
+  const lessonNote: PersonalNote = { id: "lesson:rag-12", itemId: "rag-12", title: "My notes: #12", text: "my take: unstructured hi_res keeps tables", addedAt: "t" };
+  const otherNote: PersonalNote = { id: "n-1", title: "RRF", text: "my reciprocal rank fusion cheat sheet", addedAt: "t" };
+
+  function setup() {
+    const lib = memoryLibrary([lessonNote, otherNote]);
+    const rte = fakeRte({
+      embedder: { embed: async (texts) => texts.map(toy) },
+      llm: { load: async () => "wasm", generate: async () => "Tables are kept as HTML [1].", stop: () => undefined },
+      library: lib.port,
+    });
+    return renderHook(() => useAskCourse(), { wrapper: wrapper(rte) });
+  }
+
+  it("cites only the lecture and the lesson's own note, even for an off-lecture question", async () => {
+    const { result } = setup();
+    await waitFor(() => expect(result.current.index.state).toBe("ready"));
+    const scope = { sourceIds: ["rag-12", "lesson:rag-12"] };
+
+    await act(async () => { await result.current.ask("How does reciprocal rank fusion work?", true, scope); });
+    let turn = result.current.turns[0];
+    expect(turn.pool.every((c) => scope.sourceIds.includes(c.sourceId))).toBe(true);
+    expect(turn.sources.every((c) => scope.sourceIds.includes(c.sourceId))).toBe(true);
+
+    await act(async () => { await result.current.ask("my unstructured tables", false, scope); });
+    turn = result.current.turns[1];
+    expect(turn.sources.length).toBeGreaterThan(0);
+    expect(new Set(turn.sources.map((c) => c.sourceId))).toEqual(new Set(["rag-12", "lesson:rag-12"]));
+  });
+
+  it("searches the whole course when no scope is given", async () => {
+    const { result } = setup();
+    await waitFor(() => expect(result.current.index.state).toBe("ready"));
+    await act(async () => { await result.current.ask("reciprocal rank fusion", false); });
+    expect(result.current.turns[0].sources.some((c) => c.sourceId === "rag-15" || c.sourceId === "n-1")).toBe(true);
+  });
+});
+
+describe("useLessonNote through the LibraryPort", () => {
+  const rag12 = findRoadmapItem("rag-12")!;
+  const rag13 = findRoadmapItem("rag-13")!;
+  const slow = { timeout: 3000 };
+
+  function setup(lib = memoryLibrary()) {
+    const rte = fakeRte({ library: lib.port });
+    let saves = 0;
+    const hook = renderHook(({ item }) => useLessonNote(item, () => { saves += 1; }), { wrapper: wrapper(rte), initialProps: { item: rag12 } });
+    return { ...hook, lib, saves: () => saves };
+  }
+
+  it("autosaves after typing stops, as a note tied to the lesson", async () => {
+    const { result, lib, saves } = setup();
+    await waitFor(() => expect(result.current.status).toBe("idle"));
+    act(() => result.current.setText("partition"));
+    act(() => result.current.setText("partition_pdf hi_res"));
+    expect(lib.log.saved).toHaveLength(0);
+    await waitFor(() => expect(result.current.status).toBe("saved"), slow);
+    expect(lib.log.saved).toHaveLength(1);
+    expect(lib.notes.get("lesson:rag-12")).toMatchObject({ itemId: "rag-12", text: "partition_pdf hi_res", title: "My notes: #12 Multi-modal RAG with images and documents" });
+    expect(saves()).toBe(1);
+  });
+
+  it("forgets the old embeddings on edit and deletes the note when emptied", async () => {
+    const old: PersonalNote = { id: "lesson:rag-12", itemId: "rag-12", title: "My notes", text: "old text", addedAt: "2026-10-01" };
+    const { result, lib } = setup(memoryLibrary([old]));
+    await waitFor(() => expect(result.current.text).toBe("old text"));
+    act(() => result.current.setText("new text"));
+    await waitFor(() => expect(lib.notes.get("lesson:rag-12")?.text).toBe("new text"), slow);
+    expect(lib.notes.get("lesson:rag-12")?.addedAt).toBe("2026-10-01");
+    expect(lib.log.forgotten.length).toBeGreaterThan(0);
+
+    act(() => result.current.setText("   "));
+    await waitFor(() => expect(lib.log.deleted).toEqual(["lesson:rag-12"]), slow);
+    expect(lib.notes.has("lesson:rag-12")).toBe(false);
+  });
+
+  it("saves right away when switching lessons, then loads the other lesson's note", async () => {
+    const other: PersonalNote = { id: "lesson:rag-13", itemId: "rag-13", title: "x", text: "mmr notes", addedAt: "t" };
+    const { result, lib, rerender } = setup(memoryLibrary([other]));
+    await waitFor(() => expect(result.current.status).toBe("idle"));
+    act(() => result.current.setText("typed fast"));
+    rerender({ item: rag13 });
+    await waitFor(() => expect(result.current.text).toBe("mmr notes"));
+    expect(lib.notes.get("lesson:rag-12")?.text).toBe("typed fast");
+  });
+
+  it("blocks editing when the note can't be read, so a stored note is never overwritten", async () => {
+    const lib = memoryLibrary([{ id: "lesson:rag-12", itemId: "rag-12", title: "x", text: "precious", addedAt: "t" }]);
+    const { result } = setup({ ...lib, port: { ...lib.port, loadNotes: async () => { throw new Error("IndexedDB blocked"); } } });
+    await waitFor(() => expect(result.current.status).toBe("unavailable"));
+    act(() => result.current.setText("oops"));
+    await waitFor(() => expect(result.current.status).toBe("error"), slow);
+    expect(lib.notes.get("lesson:rag-12")?.text).toBe("precious");
+  });
+
+  it("comes back after a reload (a fresh hook reads the same library)", async () => {
+    const first = setup();
+    await waitFor(() => expect(first.result.current.status).toBe("idle"));
+    act(() => first.result.current.setText("remember me"));
+    first.unmount();
+    await waitFor(() => expect(first.lib.notes.get("lesson:rag-12")?.text).toBe("remember me"));
+    const second = setup(first.lib);
+    await waitFor(() => expect(second.result.current.text).toBe("remember me"));
   });
 });

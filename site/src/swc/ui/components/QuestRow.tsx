@@ -1,5 +1,6 @@
 import { bestScores, hasPassed } from "../../logic/activity";
 import { itemXp } from "../../logic/gamify";
+import { href } from "../../logic/route";
 import type { LabData } from "../labData";
 import type { RoadmapItem } from "../../logic/roadmap";
 import { Avatar } from "./Avatar";
@@ -46,7 +47,7 @@ export function QuestRow({ item, data, compact = false, phaseLabel }: Props) {
           {phaseLabel && <span className="quest-phase">{phaseLabel}</span>}
           <span className="xp-chip">+{itemXp(item)} XP</span>
         </div>
-        <label className="quest-title" htmlFor={onToggle ? inputId : undefined}>{item.title}</label>
+        <a className="quest-title" href={href({ page: "lesson", lesson: item.id })} data-lesson-link={item.id}>{item.title}</a>
         {!compact && (item.url || item.source) && (
           <div className="quest-src">
             {item.url ? <a href={item.url} target="_blank" rel="noopener">{item.source ?? "Open"} ↗</a> : item.source}

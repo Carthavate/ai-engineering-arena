@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { href, parseRoute } from "./route";
+import { href, nextView, parseRoute } from "./route";
 
 describe("parseRoute", () => {
   it("defaults to the dashboard", () => {
@@ -34,9 +34,39 @@ describe("parseRoute", () => {
     expect(parseRoute("#p4")).toEqual({ page: "roadmap", phase: "p4" });
   });
 
+  it("reads lesson links and rejects unknown lessons", () => {
+    expect(parseRoute("#/lesson/rag-12")).toEqual({ page: "lesson", lesson: "rag-12" });
+    expect(parseRoute("#/lesson/p4-8")).toEqual({ page: "lesson", lesson: "p4-8" });
+    expect(parseRoute("#/lesson/nope")).toEqual({ page: "dashboard" });
+    expect(parseRoute("#/lesson/")).toEqual({ page: "dashboard" });
+    expect(href({ page: "lesson", lesson: "rag-12" })).toBe("#/lesson/rag-12");
+  });
+
   it("round-trips through href", () => {
-    for (const r of [{ page: "dashboard" as const }, { page: "activity" as const }, { page: "roadmap" as const, phase: "p2" }]) {
-      expect(parseRoute(href(r))).toMatchObject(r);
-    }
+    const routes = [
+      { page: "dashboard" as const }, { page: "activity" as const }, { page: "roadmap" as const, phase: "p2" },
+      { page: "lesson" as const, lesson: "rag-3" },
+    ];
+    for (const r of routes) expect(parseRoute(href(r))).toMatchObject(r);
+  });
+});
+
+describe("nextView", () => {
+  it("shows plain pages without a panel", () => {
+    expect(nextView(null, { page: "activity" })).toEqual({ page: { page: "activity" }, lesson: null });
+  });
+
+  it("opens a lesson over the page that was showing", () => {
+    const dash = nextView(null, { page: "dashboard" });
+    const open = nextView(dash, { page: "lesson", lesson: "p1-3" });
+    expect(open).toEqual({ page: { page: "dashboard" }, lesson: "p1-3" });
+    // Moving to the next lesson keeps the same page behind the panel.
+    expect(nextView(open, { page: "lesson", lesson: "p1-4" })).toEqual({ page: { page: "dashboard" }, lesson: "p1-4" });
+    // Back: the page again, panel closed.
+    expect(nextView(open, { page: "dashboard" })).toEqual({ page: { page: "dashboard" }, lesson: null });
+  });
+
+  it("puts the lesson's phase behind a fresh deep link", () => {
+    expect(nextView(null, parseRoute("#/lesson/rag-12"))).toEqual({ page: { page: "roadmap", phase: "rag" }, lesson: "rag-12" });
   });
 });

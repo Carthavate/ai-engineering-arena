@@ -2,7 +2,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { LECTURE_CHUNKS, noteChunks } from "../swc/logic/ask/coursePack";
 import { searchableText, textHash, type Chunk, type PersonalNote } from "../swc/logic/ask/documents";
 import { answerMessages, attribute, cleanStandalone, standaloneMessages, stripCitations, type Exchange } from "../swc/logic/ask/prompt";
-import { bm25Index, retrieve, type Bm25Index, type RetrievalTrace } from "../swc/logic/ask/search";
+import { scopeIndex, type SearchIndex } from "../swc/logic/ask/scope";
+import { bm25Index, retrieve, type RetrievalTrace } from "../swc/logic/ask/search";
 import type { ChatMessage, LlmDevice } from "../swc/logic/lab/llm";
 import type { Vec } from "../swc/logic/lab/vectors";
 import { useRte } from "./RteContext";
@@ -57,6 +58,11 @@ export interface AddNotesResult {
   readonly overLimit: number;
 }
 
+export interface AskOptions {
+  /** Search only these sources: roadmap item ids (lectures) and note ids. Omitted: the whole course. */
+  readonly sourceIds?: readonly string[];
+}
+
 export interface AskCourse {
   readonly notes: readonly PersonalNote[];
   readonly index: IndexStatus;
@@ -64,19 +70,15 @@ export interface AskCourse {
   readonly turns: readonly AskTurn[];
   readonly busy: boolean;
   /** Retrieve, and if answerWithAi, generate a grounded answer with the local model. */
-  readonly ask: (question: string, answerWithAi: boolean) => Promise<void>;
+  readonly ask: (question: string, answerWithAi: boolean, options?: AskOptions) => Promise<void>;
   /** Stop the current turn at its next step (and cut generation short). */
   readonly stop: () => void;
   readonly clear: () => void;
   readonly retryIndex: () => void;
   readonly addNotes: (notes: ReadonlyArray<{ readonly title: string; readonly text: string }>) => Promise<AddNotesResult>;
   readonly removeNote: (id: string) => Promise<void>;
-}
-
-interface Index {
-  readonly chunks: readonly Chunk[];
-  readonly bm25: Bm25Index;
-  readonly vectors: readonly Vec[];
+  /** Re-read the notes from the library (e.g. after a lesson note was saved elsewhere) and re-index. */
+  readonly reloadNotes: () => Promise<void>;
 }
 
 class Cancelled extends Error {}
@@ -89,6 +91,11 @@ function vectorKey(c: Chunk): string {
   return `${EMBED_MODEL}:${textHash(searchableText(c))}`;
 }
 
+/** Cache keys of a note's embeddings, to forget them when the note changes or goes away. */
+export function noteVectorKeys(note: PersonalNote): string[] {
+  return noteChunks([note]).map(vectorKey);
+}
+
 export function useAskCourse(): AskCourse {
   const { embedder, llm, library } = useRte();
   const [notes, setNotes] = useState<readonly PersonalNote[] | null>(null);
@@ -99,7 +106,7 @@ export function useAskCourse(): AskCourse {
   const [busy, setBusy] = useState(false);
   const busyRef = useRef(false);
   const notesRef = useRef<readonly PersonalNote[]>([]);
-  const indexRef = useRef<Promise<Index> | null>(null);
+  const indexRef = useRef<Promise<SearchIndex> | null>(null);
   const turnId = useRef(0);
   const stoppedTurn = useRef(0);
   const aiRef = useRef<Promise<LlmDevice> | null>(null);
@@ -128,7 +135,7 @@ export function useAskCourse(): AskCourse {
     const keys = chunks.map(vectorKey);
     setIndex({ state: "building", embedded: 0, total: chunks.length, modelPct: null });
 
-    const build = (async (): Promise<Index> => {
+    const build = (async (): Promise<SearchIndex> => {
       const cached = await library.getVectors(keys);
       const vectors: (Vec | undefined)[] = keys.map((k) => cached.get(k));
       const missing = vectors.flatMap((v, i) => (v ? [] : [i]));
@@ -141,6 +148,8 @@ export function useAskCourse(): AskCourse {
         const out = await embedder.embed(batch.map((i) => texts[i]), (pct) => {
           if (active) setIndex((s) => ({ ...s, modelPct: pct }));
         });
+        // Replaced while embedding: don't cache vectors of text that may already be gone (e.g. an edited note).
+        if (!active) throw new Cancelled();
         batch.forEach((i, j) => {
           vectors[i] = out[j];
         });
@@ -183,7 +192,20 @@ export function useAskCourse(): AskCourse {
     return aiRef.current;
   }, [llm]);
 
-  const ask = useCallback(async (question: string, answerWithAi: boolean) => {
+  // The newest index. A build replaced mid-way (the notes changed) is cancelled: wait for its successor instead.
+  const currentIndex = useCallback(async (): Promise<SearchIndex> => {
+    for (;;) {
+      const pending = indexRef.current ?? Promise.reject(new Error("index not started"));
+      try {
+        const index = await pending;
+        if (indexRef.current === pending) return index;
+      } catch (err) {
+        if (!(err instanceof Cancelled) || indexRef.current === pending) throw err;
+      }
+    }
+  }, []);
+
+  const ask = useCallback(async (question: string, answerWithAi: boolean, options: AskOptions = {}) => {
     const q = question.trim();
     if (!q || busyRef.current) return;
     busyRef.current = true;
@@ -219,8 +241,9 @@ export function useAskCourse(): AskCourse {
         }
       }
 
-      const idx = await (indexRef.current ?? Promise.reject(new Error("index not started")));
+      const whole = await currentIndex();
       check();
+      const idx = options.sourceIds ? scopeIndex(whole, new Set(options.sourceIds)) : whole;
       const [queryVector] = await embedder.embed([searchQuery], () => undefined);
       check();
       const trace = retrieve(searchQuery, queryVector, idx.bm25, idx.vectors, { top: TOP_K });
@@ -252,7 +275,7 @@ export function useAskCourse(): AskCourse {
       busyRef.current = false;
       setBusy(false);
     }
-  }, [turns, ensureAi, llm, embedder, index.state]);
+  }, [turns, ensureAi, llm, embedder, index.state, currentIndex]);
 
   const stop = useCallback(() => {
     stoppedTurn.current = turnId.current;
@@ -295,9 +318,15 @@ export function useAskCourse(): AskCourse {
   const removeNote = useCallback(async (id: string) => {
     const note = notesRef.current.find((n) => n.id === id);
     await library.deleteNote(id);
-    if (note) await library.deleteVectors(noteChunks([note]).map(vectorKey));
+    if (note) await library.deleteVectors(noteVectorKeys(note));
     notesRef.current = notesRef.current.filter((n) => n.id !== id);
     setNotes(notesRef.current);
+  }, [library]);
+
+  const reloadNotes = useCallback(async () => {
+    const fresh = await library.loadNotes();
+    notesRef.current = fresh;
+    setNotes(fresh);
   }, [library]);
 
   return {
@@ -312,5 +341,6 @@ export function useAskCourse(): AskCourse {
     retryIndex: () => setRebuild((n) => n + 1),
     addNotes,
     removeNote,
+    reloadNotes,
   };
 }
