@@ -120,7 +120,7 @@ All ports are defined in [`site/src/rte/ports.ts`](../site/src/rte/ports.ts). Li
 | `SolvesPort` | challenge solves | `record` | `bsw/supabase/solves.ts` |
 | `PythonPort`, `KernelPort` | — | run challenge tests, run notebook cells | `bsw/compute/` (Pyodide workers) |
 | `EmbedPort`, `TokenizerPort`, `LlmPort` | — | embed, tokenize, generate | `bsw/compute/` (transformers.js workers) |
-| `LibraryPort` | personal notes, cached embeddings | save/delete notes, store vectors | `bsw/browser/library.ts` (IndexedDB, never uploaded) |
+| `LibraryPort` | personal notes (incl. one note per lesson, `PersonalNote.itemId`), cached embeddings | save/delete notes, store vectors | `bsw/browser/library.ts` (IndexedDB, never uploaded; used in both connected and offline builds) |
 
 Without database settings, `createRte()` wires `bsw/offline.ts` instead: reads come back empty and every action explains why.
 
@@ -176,6 +176,29 @@ sequenceDiagram
   H->>H: post-hoc citations: each sentence matched to its best source
 ```
 
+### Studying a lesson (the lesson panel)
+
+Every lesson row links to `#/lesson/<itemId>`. `useRoute` turns the hash into a view: the page that was showing, plus the lesson panel over it (a fresh deep link puts the lesson's phase behind it). Back, Esc and Close all close the panel; Previous/Next replace the history entry, so Back still closes it.
+
+```mermaid
+sequenceDiagram
+  participant Row as QuestRow (roadmap / dashboard)
+  participant R as useRoute (RTE) + route.ts (pure)
+  participant P as LessonPanel (lazy chunk)
+  participant N as useLessonNote (RTE)
+  participant A as useAskCourse (RTE)
+  participant L as LibraryPort (IndexedDB)
+  Row->>R: #/lesson/rag-12
+  R->>P: view = { page behind, lesson: rag-12 }
+  P->>P: thumbnail → youtube-nocookie iframe on play; Quiz/Duel reuse App's QuizDialog/ChallengeDialog
+  P->>N: type a note
+  N->>L: saveNote({ id: lesson:rag-12, itemId: rag-12 }) after 700 ms; forget the old version's vectors
+  P->>A: ask(question, useAi, { sourceIds: [rag-12, lesson:rag-12] })
+  A->>A: scopeIndex(): only that lecture's chunks and the note (swc/logic/ask/scope.ts)
+```
+
+The lesson note is an ordinary `PersonalNote`, so the Lab's Ask the course searches it too. No new port and no migration: everything new is pure logic, RTE hooks and UI.
+
 ### Passing a quiz completes a lecture
 
 ```mermaid
@@ -207,8 +230,8 @@ A violation fails the pull request.
 
 | Level | What | Where |
 |---|---|---|
-| Unit (pure) | XP, levels, badges, duel views, feed, routing, vectors, share cards | `site/src/swc/logic/**/*.test.ts` |
-| RTE with fake ports | hooks driven by in-memory ports, no database | `site/src/rte/rte.test.tsx` |
+| Unit (pure) | XP, levels, badges, duel views, feed, routing, lesson helpers (YouTube ids, prev/next, status), scoped search, vectors, share cards | `site/src/swc/logic/**/*.test.ts` |
+| RTE with fake ports | hooks driven by in-memory ports, no database (incl. scoped Ask and per-lesson notes) | `site/src/rte/rte.test.tsx` |
 | Database | sign-up, security, quizzes and progress gating, duels, races, players, solves, API contract | `supabase/tests/*.sql` on a fresh Postgres 15 with a Supabase shim |
 | Content | every coding challenge's reference solution passes and its starter fails | `site/challenges/build.py` |
 | Python | `shared/` package | `tests/` (pytest) |
