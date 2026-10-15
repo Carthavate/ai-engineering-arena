@@ -770,3 +770,15 @@ button.cite { cursor: pointer; }
 @media (prefers-color-scheme: dark) {
   .bubble.me { color: #10122a; }
 }
+
+/* Players: delete for good */
+.player-actions { display: inline-flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 6px; }
+.btn-danger { background: var(--tomato); color: #17183a; }
+.delete-confirm { grid-column: 1 / -1; display: grid; gap: 8px; margin-top: 4px; padding: 10px 12px; border: 2px solid var(--tomato); border-radius: 12px; background: var(--card); font-size: 14px; }
+.delete-confirm label { font-weight: 700; }
+.delete-confirm-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.delete-confirm-row .lab-input { flex: 1 1 180px; width: auto; }
+.declined-list .delete-confirm { margin-top: 10px; }
+@media (max-width: 560px) {
+  .player-rows li .player-actions { grid-column: 1 / -1; justify-content: flex-start; }
+}

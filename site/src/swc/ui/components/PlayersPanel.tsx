@@ -1,26 +1,33 @@
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
 import { relativeTime } from "../../logic/activity";
 import type { LabData } from "../labData";
 import { type PlayersAdmin } from "../../../rte/usePlayers";
 import { Avatar } from "./Avatar";
+import { DeletePlayerConfirm } from "./DeletePlayerConfirm";
 import { cleanGithubInput, isGithubUsername } from "../../logic/players";
 
 type Note = { readonly ok: boolean; readonly text: string } | null;
 
-/** Admin-only: let people who signed in become players, invite usernames ahead of time, remove players. */
+/** Admin-only: let people who signed in become players, invite usernames ahead of time, remove or delete players. */
 export function PlayersPanel({ data, admin }: { readonly data: LabData; readonly admin: PlayersAdmin }) {
   const [name, setName] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
   const [confirm, setConfirm] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [note, setNote] = useState<Note>(null);
+  const panelRef = useRef<HTMLElement>(null);
   if (!data.me?.is_admin) return null;
 
+  /** One action at a time: the others are disabled until it settles. */
   const run = async (key: string, fn: () => Promise<{ ok: boolean; error?: string }>, success: string) => {
+    if (busy !== null) return;
     setBusy(key);
     setNote(null);
     const res = await fn();
     setBusy(null);
     setConfirm(null);
+    setDeleting(null);
     setNote(res.ok ? { ok: true, text: success } : { ok: false, text: res.error ?? "Something went wrong." });
   };
 
@@ -38,13 +45,50 @@ export function PlayersPanel({ data, admin }: { readonly data: LabData; readonly
     }, `@${github} is in. If they haven't signed in yet, they become a player the moment they do.`);
   };
 
+  const askDelete = (github: string) => {
+    setConfirm(null);
+    setNote(null);
+    setDeleteError(null);
+    setDeleting(github);
+  };
+  const cancelDelete = (github: string) => {
+    setDeleting(null);
+    setDeleteError(null);
+    // Back to the button that opened the form (usernames are letters, digits and dashes: safe in a selector).
+    requestAnimationFrame(() => panelRef.current?.querySelector<HTMLButtonElement>(`[data-delete-for="${github}"]`)?.focus());
+  };
+  /** Unlike the other actions, a failed delete keeps its form open and shows the error there. */
+  const confirmDelete = async (github: string) => {
+    if (busy !== null) return;
+    setBusy(`del-${github}`);
+    setNote(null);
+    setDeleteError(null);
+    const res = await admin.delete(github);
+    setBusy(null);
+    if (res.ok) {
+      setDeleting(null);
+      setNote({ ok: true, text: `@${github} is deleted, with everything they did here.` });
+    } else {
+      setDeleteError(res.error);
+    }
+  };
+  // A profile without a GitHub username (not a GitHub sign-in) can't be named, so it can't be deleted here.
+  const deleteButton = (github: string, className = "btn btn-ghost btn-small") => github !== "" && (
+    <button type="button" className={className} disabled={busy !== null} onClick={() => askDelete(github)}
+      data-delete-for={github} aria-label={`Delete @${github} for good`}>Delete</button>
+  );
+  const deleteConfirm = (github: string) => deleting === github && (
+    <DeletePlayerConfirm key={github} github={github} busy={busy !== null} pending={busy === `del-${github}`} error={deleteError}
+      onCancel={() => cancelDelete(github)} onConfirm={() => void confirmDelete(github)} />
+  );
+
   const players = data.members.filter((m) => !m.is_admin);
   const waiting = admin.overview?.waiting ?? [];
   const invited = admin.overview?.invited ?? [];
   const declined = admin.overview?.declined ?? [];
 
   return (
-    <section className="panel players-panel" id="players-panel" aria-labelledby="players-title">
+    <section ref={panelRef} className="panel players-panel" id="players-panel" aria-labelledby="players-title">
       <div className="panel-head">
         <h2 id="players-title" className="panel-title">Players</h2>
         <span className="admin-tag">Admins only</span>
@@ -52,6 +96,7 @@ export function PlayersPanel({ data, admin }: { readonly data: LabData; readonly
       <p className="muted small-text">
         Players can tick quests, take quizzes, duel and race, and they show up on the leaderboard.
         This has nothing to do with the GitHub repo: nobody gets repo access from being a player.
+        Remove hides a player and keeps their history; Delete erases them and everything they did, for good.
       </p>
 
       <form className="invite-form" onSubmit={submit}>
@@ -74,14 +119,18 @@ export function PlayersPanel({ data, admin }: { readonly data: LabData; readonly
                 <b>{w.display_name || w.github_username}</b>
                 <span className="muted small-text">@{w.github_username} · signed in {relativeTime(w.signed_in_at, data.now)}</span>
               </span>
-              <button type="button" className="btn btn-primary btn-small" disabled={busy !== null}
-                onClick={() => void run(w.github_username, () => admin.invite(w.github_username), `${w.display_name || w.github_username} is now a player.`)}>
-                {busy === w.github_username ? "Letting in…" : "Let in"}
-              </button>
-              <button type="button" className="btn btn-ghost btn-small" disabled={busy !== null}
-                onClick={() => void run(`no-${w.github_username}`, () => admin.decline(w.github_username), `Declined @${w.github_username}. You can still let them in later.`)}>
-                {busy === `no-${w.github_username}` ? "Declining…" : "Decline"}
-              </button>
+              <span className="player-actions">
+                <button type="button" className="btn btn-primary btn-small" disabled={busy !== null}
+                  onClick={() => void run(w.github_username, () => admin.invite(w.github_username), `${w.display_name || w.github_username} is now a player.`)}>
+                  {busy === w.github_username ? "Letting in…" : "Let in"}
+                </button>
+                <button type="button" className="btn btn-ghost btn-small" disabled={busy !== null}
+                  onClick={() => void run(`no-${w.github_username}`, () => admin.decline(w.github_username), `Declined @${w.github_username}. You can still let them in later.`)}>
+                  {busy === `no-${w.github_username}` ? "Declining…" : "Decline"}
+                </button>
+                {deleteButton(w.github_username)}
+              </span>
+              {deleteConfirm(w.github_username)}
             </li>
           ))}
         </ul>
@@ -96,9 +145,11 @@ export function PlayersPanel({ data, admin }: { readonly data: LabData; readonly
                 @{d.github_username}
                 <button type="button" className="btn-link" disabled={busy !== null}
                   onClick={() => void run(d.github_username, () => admin.invite(d.github_username), `${d.display_name || d.github_username} is now a player.`)}>Let in</button>
+                {deleteButton(d.github_username, "btn-link")}
               </li>
             ))}
           </ul>
+          {declined.map((d) => deleteConfirm(d.github_username))}
         </details>
       )}
 
@@ -135,8 +186,13 @@ export function PlayersPanel({ data, admin }: { readonly data: LabData; readonly
                   <button type="button" className="btn-link" onClick={() => setConfirm(null)}>No</button>
                 </span>
               ) : (
-                <button type="button" className="btn btn-ghost btn-small" onClick={() => setConfirm(m.github_username)}>Remove</button>
+                <span className="player-actions">
+                  <button type="button" className="btn btn-ghost btn-small" disabled={busy !== null}
+                    onClick={() => { setDeleting(null); setConfirm(m.github_username); }}>Remove</button>
+                  {deleteButton(m.github_username)}
+                </span>
               )}
+              {deleteConfirm(m.github_username)}
             </li>
           ))}
         </ul>

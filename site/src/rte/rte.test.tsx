@@ -11,6 +11,7 @@ import { useProgress } from "./useProgress";
 import { useSolves } from "./useSolves";
 import { useAskCourse } from "./useAskCourse";
 import { useLessonNote } from "./useLessonNote";
+import { usePlayers } from "./usePlayers";
 import { findRoadmapItem } from "../swc/logic/activity";
 import type { PersonalNote } from "../swc/logic/ask/documents";
 import type { LibraryPort } from "./ports";
@@ -316,5 +317,37 @@ describe("useLessonNote through the LibraryPort", () => {
     await waitFor(() => expect(first.lib.notes.get("lesson:rag-12")?.text).toBe("remember me"));
     const second = setup(first.lib);
     await waitFor(() => expect(second.result.current.text).toBe("remember me"));
+  });
+});
+
+describe("usePlayers through the PlayersPort", () => {
+  it("deletes a player for good, then reloads the lists and the board; a refusal changes nothing", async () => {
+    const deleted: string[] = [];
+    let overviews = 0;
+    let boardReloads = 0;
+    const rte = fakeRte({
+      players: {
+        overview: async () => { overviews++; return ok({ waiting: [], declined: [], invited: [] }); },
+        invite: async () => ok({ signedIn: false }),
+        remove: async () => ok(null),
+        decline: async () => ok(null),
+        delete: async (github) => {
+          deleted.push(github);
+          return github === "boss" ? fail("Admins can't be deleted") : ok(null);
+        },
+      },
+    });
+    const { result } = renderHook(() => usePlayers(true, () => { boardReloads++; }), { wrapper: wrapper(rte) });
+    await waitFor(() => expect(result.current.overview).not.toBeNull());
+    const loaded = overviews;
+
+    await act(async () => { expect(await result.current.delete("old-friend")).toEqual(ok(null)); });
+    expect(deleted).toEqual(["old-friend"]);
+    expect(overviews).toBe(loaded + 1);
+    expect(boardReloads).toBe(1);
+
+    await act(async () => { expect(await result.current.delete("boss")).toEqual(fail("Admins can't be deleted")); });
+    expect(overviews).toBe(loaded + 1);
+    expect(boardReloads).toBe(1);
   });
 });

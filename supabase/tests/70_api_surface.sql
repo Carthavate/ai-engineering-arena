@@ -7,7 +7,7 @@ select tests.eq(
   (select string_agg(p.proname, ',' order by p.proname)
      from pg_proc p join pg_namespace n on n.oid = p.pronamespace
     where n.nspname = 'public' and has_function_privilege('authenticated', p.oid, 'execute')),
-  'cancel_duel,create_duel,create_race,decline_player,finish_duel,invite_player,lab_admin_overview,quiz_items,'
+  'cancel_duel,create_duel,create_race,decline_player,delete_player,finish_duel,invite_player,lab_admin_overview,quiz_items,'
   || 'remove_player,respond_duel,start_duel,start_quiz,submit_duel,submit_quiz,submit_race',
   'public functions callable by signed-in users');
 

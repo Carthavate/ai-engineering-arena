@@ -23,5 +23,9 @@ export function supabasePlayers(client: SupabaseClient): PlayersPort {
       const { error } = await client.rpc("decline_player", { p_github: github });
       return error ? failed("decline_player", error, "Couldn't decline that player.") : ok(null);
     },
+    async delete(github) {
+      const { error } = await client.rpc("delete_player", { p_github: github });
+      return error ? failed("delete_player", error, "Couldn't delete that player.") : ok(null);
+    },
   };
 }

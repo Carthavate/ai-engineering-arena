@@ -25,3 +25,25 @@ export function watchTables(
   });
   return () => void client.removeChannel(channel);
 }
+
+/** How long to wait for a burst of deleted rows to end before reloading once. */
+export const REMOVAL_RELOAD_MS = 500;
+
+/** Run fn once, `ms` after the last call of a burst (e.g. the many rows one player delete removes). */
+export function debounce(fn: () => void, ms: number): { readonly call: () => void; readonly cancel: () => void } {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const cancel = () => {
+    if (timer !== undefined) clearTimeout(timer);
+    timer = undefined;
+  };
+  return {
+    call: () => {
+      cancel();
+      timer = setTimeout(() => {
+        timer = undefined;
+        fn();
+      }, ms);
+    },
+    cancel,
+  };
+}

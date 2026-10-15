@@ -42,7 +42,7 @@ export interface QuizPort {
   loadResults(): Promise<Outcome<readonly QuizResult[]>>;
   /** Roadmap items that have questions in the bank. */
   loadQuizItems(): Promise<Outcome<readonly string[]>>;
-  /** New or graded results; onReconnect means events may have been missed. */
+  /** New or graded results; onReconnect means events may have been missed or rows were deleted: reload. */
   watchResults(cb: (result: QuizResult) => void, onReconnect: () => void): Unsubscribe;
   start(itemId: string): Promise<Outcome<OpenQuiz>>;
   submit(quizId: string, answers: readonly number[]): Promise<Outcome<GradedQuiz>>;
@@ -51,6 +51,7 @@ export interface QuizPort {
 export interface DuelWatchers {
   readonly duel: (duel: Duel) => void;
   readonly entry: (entry: DuelEntry) => void;
+  /** Reload everything: events may have been missed, or rows were deleted (a player was deleted). */
   readonly reconnected: () => void;
 }
 
@@ -88,6 +89,8 @@ export interface PlayersPort {
   invite(github: string): Promise<Outcome<{ readonly signedIn: boolean }>>;
   remove(github: string): Promise<Outcome<null>>;
   decline(github: string): Promise<Outcome<null>>;
+  /** Erase the account and everything that mentions it, duels against others included. */
+  delete(github: string): Promise<Outcome<null>>;
 }
 
 export interface SolvesPort {
