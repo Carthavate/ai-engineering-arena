@@ -101,7 +101,7 @@ export function PlayersPanel({ data, admin }: { readonly data: LabData; readonly
 
       <form className="invite-form" onSubmit={submit}>
         <label className="sr-only" htmlFor="invite-name">GitHub username</label>
-        <input id="invite-name" className="lab-input" value={name} onChange={(e) => setName(e.target.value)} placeholder="GitHub username, e.g. omar-dev" autoComplete="off" spellCheck={false} />
+        <input id="invite-name" className="lab-input" value={name} onChange={(e) => setName(e.target.value)} placeholder="GitHub username, e.g. octocat" autoComplete="off" spellCheck={false} />
         <button type="submit" className="btn btn-primary" disabled={busy !== null || !name.trim()}>{busy === "invite" ? "Inviting…" : "Invite"}</button>
       </form>
       {note && <p className={note.ok ? "players-ok" : "form-error"} role="status">{note.text}</p>}
