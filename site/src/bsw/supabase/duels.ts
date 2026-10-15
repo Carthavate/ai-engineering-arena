@@ -4,7 +4,7 @@ import type { Duel, DuelEntry } from "../../swc/logic/duels";
 import { fail, ok, type Outcome, type QuizQuestion, type RaceSubmitted } from "../../swc/logic/types";
 import { failed } from "./errors";
 import { toGraded, type SubmitResult } from "./quizzes";
-import { watchTables } from "./realtime";
+import { debounce, REMOVAL_RELOAD_MS, watchTables } from "./realtime";
 
 const DUEL_COLUMNS = "id,kind,item_id,challenge_id,challenger,opponent,status,winner,created_at,completed_at,starts_at";
 const ENTRY_COLUMNS = "duel_id,user_id,started_at,submitted_at,score,time_ms";
@@ -43,10 +43,16 @@ export function supabaseDuels(client: SupabaseClient): DuelPort {
     },
 
     watch(w) {
-      return watchTables(client, "duel-changes", [
-        { table: "duels", on: (p) => { if (p.eventType !== "DELETE") w.duel(p.new as unknown as Duel); } },
-        { table: "duel_entries", on: (p) => { if (p.eventType !== "DELETE") w.entry(p.new as unknown as DuelEntry); } },
+      // Rows only disappear when an admin deletes a player (ADR-0011): reload once after the burst.
+      const removed = debounce(w.reconnected, REMOVAL_RELOAD_MS);
+      const stop = watchTables(client, "duel-changes", [
+        { table: "duels", on: (p) => (p.eventType === "DELETE" ? removed.call() : w.duel(p.new as unknown as Duel)) },
+        { table: "duel_entries", on: (p) => (p.eventType === "DELETE" ? removed.call() : w.entry(p.new as unknown as DuelEntry)) },
       ], w.reconnected);
+      return () => {
+        removed.cancel();
+        stop();
+      };
     },
 
     async create(itemId, opponentId) {

@@ -116,7 +116,7 @@ All ports are defined in [`site/src/rte/ports.ts`](../site/src/rte/ports.ts). Li
 | `QuizPort` | results, quiz items | `start`, `submit` | `bsw/supabase/quizzes.ts` |
 | `DuelPort` | duels, entries, race solutions | `create`, `createRace`, `respond`, `cancel`, `start`, `submit`, `submitRace`, `finish` | `bsw/supabase/duels.ts` |
 | `LivePort` | live duel progress (broadcast, never stored) | `send` | `bsw/supabase/duels.ts` |
-| `PlayersPort` | admin overview | `invite`, `remove`, `decline` | `bsw/supabase/players.ts` |
+| `PlayersPort` | admin overview | `invite`, `remove`, `decline`, `delete` | `bsw/supabase/players.ts` |
 | `SolvesPort` | challenge solves | `record` | `bsw/supabase/solves.ts` |
 | `PythonPort`, `KernelPort` | — | run challenge tests, run notebook cells | `bsw/compute/` (Pyodide workers) |
 | `EmbedPort`, `TokenizerPort`, `LlmPort` | — | embed, tokenize, generate | `bsw/compute/` (transformers.js workers) |

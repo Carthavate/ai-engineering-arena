@@ -119,6 +119,7 @@ erDiagram
 
 Also in `private`, with no relationships:
 - `members (github_username)` and `admins (github_username)`: the allow-lists. Usernames are unique, case-insensitively.
+- `admin_log (actor, action, target, at)`: one line per player an admin deleted. It has no foreign keys, so it outlives the profiles.
 - `quiz_bank (id, item_id, question, options[4], answer_index, explanation)`: 136 questions, 8 per RAG lecture.
 
 ## 3. Tables
@@ -135,6 +136,7 @@ Also in `private`, with no relationships:
 | `quiz_bank` | private | the questions | nobody (functions only) | migrations |
 | `quiz_keys`, `duel_keys` | private | answer keys, the secret race challenge | nobody | quiz and duel functions |
 | `members`, `admins` | private | allow-lists of GitHub usernames | nobody | admin functions, migrations |
+| `admin_log` | private | who deleted which player, when | nobody | `delete_player` |
 
 ## 4. The API: functions the site calls
 
@@ -154,7 +156,8 @@ All are `security definer`, with `search_path = ''`. The architecture test fixes
 | `submit_race(duel, passed, code)` | both racers | first pass wins; a pass after the clock is refused |
 | `finish_duel(duel)` | both players | close a duel whose clock ran out |
 | `lab_admin_overview()` | admins | waiting, declined and invited people |
-| `invite_player(github)` / `decline_player` / `remove_player` | admins | manage players |
+| `invite_player(github)` / `decline_player` / `remove_player` | admins | manage players (remove hides, history kept) |
+| `delete_player(github)` | admins | erase a non-admin for good: sign-in, profile and every row that mentions them, duels against others included ([ADR-0011](adr/0011-deleting-a-player-erases-everything.md)) |
 
 ## 5. Internals
 
@@ -167,6 +170,7 @@ All are `security definer`, with `search_path = ''`. The architecture test fixes
 | `private.invite_ttl()` | 5 minutes |
 | `private.duel_countdown()` | 5 seconds |
 | `private.is_pass(score, total)` | 80% (4 of 5) |
+| `private.delete_limit()` | 5 players per admin per 24 hours |
 
 **Referee.** `private.decide_duel(duel)` closes a duel:
 - **Quiz duels:** best score wins, and a tie goes to the faster player.

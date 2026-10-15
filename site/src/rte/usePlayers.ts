@@ -9,6 +9,8 @@ export interface PlayersAdmin {
   readonly invite: (github: string) => Promise<Outcome<{ readonly signedIn: boolean }>>;
   readonly remove: (github: string) => Promise<Outcome<null>>;
   readonly decline: (github: string) => Promise<Outcome<null>>;
+  /** For good: their account and every row that mentions them. */
+  readonly delete: (github: string) => Promise<Outcome<null>>;
 }
 
 /** Admin-only player management. Pass enabled=false for everyone else (no calls are made). */
@@ -48,6 +50,7 @@ export function usePlayers(enabled: boolean, onChanged: () => void): PlayersAdmi
   const invite = useCallback((github: string) => act(true, () => players.invite(github))(), [act, players]);
   const remove = useCallback((github: string) => act(true, () => players.remove(github))(), [act, players]);
   const decline = useCallback((github: string) => act(false, () => players.decline(github))(), [act, players]);
+  const deleteForGood = useCallback((github: string) => act(true, () => players.delete(github))(), [act, players]);
 
-  return { overview, error, refresh, invite, remove, decline };
+  return { overview, error, refresh, invite, remove, decline, delete: deleteForGood };
 }

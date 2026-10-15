@@ -3,7 +3,7 @@ import type { QuizPort } from "../../rte/ports";
 import type { QuizResult } from "../../swc/logic/activity";
 import { ok, type GradedQuiz, type OpenQuiz, type QuizQuestion } from "../../swc/logic/types";
 import { failed } from "./errors";
-import { watchTables } from "./realtime";
+import { debounce, REMOVAL_RELOAD_MS, watchTables } from "./realtime";
 
 const RESULT_COLUMNS = "id,user_id,item_id,score,total,completed_at,source_duel";
 
@@ -52,15 +52,24 @@ export function supabaseQuizzes(client: SupabaseClient): QuizPort {
     },
 
     watchResults(cb, onReconnect) {
-      return watchTables(client, "quiz-changes", [{
+      // Rows only disappear when an admin deletes a player (ADR-0011): reload once after the burst.
+      const removed = debounce(onReconnect, REMOVAL_RELOAD_MS);
+      const stop = watchTables(client, "quiz-changes", [{
         table: "quiz_attempts",
         // INSERT too: a duel saves each player's answer sheet as a new, already finished attempt.
         on: (p) => {
-          if (p.eventType === "DELETE") return;
+          if (p.eventType === "DELETE") {
+            removed.call();
+            return;
+          }
           const result = toResult(p.new as Record<string, unknown>);
           if (result) cb(result);
         },
       }], onReconnect);
+      return () => {
+        removed.cancel();
+        stop();
+      };
     },
 
     async start(itemId) {

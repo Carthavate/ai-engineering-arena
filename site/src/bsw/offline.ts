@@ -51,6 +51,7 @@ export const offline = {
     invite: async () => fail(OFFLINE),
     remove: async () => fail(OFFLINE),
     decline: async () => fail(OFFLINE),
+    delete: async () => fail(OFFLINE),
   } satisfies PlayersPort,
   solves: {
     load: async () => ok([]),
