@@ -1,5 +1,6 @@
 import { bestScores, hasPassed } from "../../logic/activity";
 import { itemXp } from "../../logic/gamify";
+import { youtubeId } from "../../logic/lesson";
 import { href } from "../../logic/route";
 import type { LabData } from "../labData";
 import type { RoadmapItem } from "../../logic/roadmap";
@@ -23,6 +24,8 @@ export function QuestRow({ item, data, compact = false, phaseLabel }: Props) {
   const inputId = `q-${compact ? "c-" : ""}${item.id}`;
   // A lecture with a quiz is completed by passing the quiz (4/5), not by ticking the box.
   const locked = hasQuiz && !done && !(me && hasPassed(data.quizResults, me.id, item.id));
+  const video = youtubeId(item.url) !== null;
+  const lessonHref = href({ page: "lesson", lesson: item.id });
 
   return (
     <li className={`quest${done ? " done" : ""}${compact ? " compact" : ""}`}>
@@ -47,12 +50,14 @@ export function QuestRow({ item, data, compact = false, phaseLabel }: Props) {
           {phaseLabel && <span className="quest-phase">{phaseLabel}</span>}
           <span className="xp-chip">+{itemXp(item)} XP</span>
         </div>
-        <a className="quest-title" href={href({ page: "lesson", lesson: item.id })} data-lesson-link={item.id}>{item.title}</a>
-        {!compact && (item.url || item.source) && (
-          <div className="quest-src">
-            {item.url ? <a href={item.url} target="_blank" rel="noopener">{item.source ?? "Open"} ↗</a> : item.source}
-          </div>
-        )}
+        <a className="quest-title" href={lessonHref} data-lesson-link={item.id}>{item.title}</a>
+        <div className="quest-src">
+          {/* The main way in: opens the lesson panel (video, notes, Ask) on this page. */}
+          <a className="btn btn-watch" href={lessonHref} aria-label={`${video ? "Watch" : "Open"} "${item.title}" here`}>
+            {video ? <><span aria-hidden="true">▶</span> Watch</> : "Open lesson"}
+          </a>
+          {!compact && (item.url ? <a href={item.url} target="_blank" rel="noopener">{item.source ?? "Open"} ↗</a> : item.source)}
+        </div>
         {!compact && hasQuiz && (onQuiz || scored.length > 0) && (
           <div className="quest-quiz">
             {onQuiz && <button type="button" className="btn btn-quiz" onClick={() => onQuiz(item)}>Quiz me</button>}

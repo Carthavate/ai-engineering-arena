@@ -28,7 +28,7 @@ export function LessonVideo({ item }: { readonly item: RoadmapItem }) {
         ) : (
           <button type="button" className="lesson-play" onClick={() => setPlaying(true)} aria-label={`Play the video: ${item.title}`}>
             <img src={thumbnailUrl(id)} alt="" referrerPolicy="no-referrer" />
-            <span className="lesson-play-icon" aria-hidden="true">▶</span>
+            <span className="lesson-play-icon" aria-hidden="true"><b>▶</b> Play video</span>
           </button>
         )}
       </div>
