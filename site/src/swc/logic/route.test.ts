@@ -19,7 +19,7 @@ describe("parseRoute", () => {
     expect(parseRoute("#/player/TWadi")).toEqual({ page: "player", player: "TWadi" });
     expect(parseRoute("#/player/bad%20name")).toEqual({ page: "dashboard" });
     expect(parseRoute("#/player/")).toEqual({ page: "dashboard" });
-    expect(href({ page: "player", player: "bravo421" })).toBe("#/player/bravo421");
+    expect(href({ page: "player", player: "octo-cat" })).toBe("#/player/octo-cat");
   });
 
   it("reads lab pages", () => {
