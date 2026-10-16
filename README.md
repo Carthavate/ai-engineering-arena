@@ -2,7 +2,15 @@
 
 **Two friends learning AI engineering, and the game we built to keep each other going.**
 
+[![Live site](https://img.shields.io/badge/live-twadi.github.io-3f5bff)](https://twadi.github.io/ai-engineering-arena/)
+[![License: Apache 2.0](https://img.shields.io/badge/license-Apache%202.0-18b98d)](LICENSE)
+[![GitHub stars](https://img.shields.io/github/stars/TWadi/ai-engineering-arena?style=flat&color=ffc83d)](https://github.com/TWadi/ai-engineering-arena/stargazers)
+
 👉 **Live:** https://twadi.github.io/ai-engineering-arena/
+
+🧪 **Try it now, no sign-up:** [graded Python challenges](https://twadi.github.io/ai-engineering-arena/#/lab) · [Ask the course (RAG running in your browser)](https://twadi.github.io/ai-engineering-arena/#/lab/ask) · [the 40-week roadmap](https://twadi.github.io/ai-engineering-arena/#/roadmap)
+
+⭐ **Learning with a friend too? A star helps other people find this.**
 
 📐 **[Software architecture](docs/architecture.md)** · 🗄️ **[Database schema](docs/database.md)** · 🧭 **[Decision records](docs/adr/)** · 🔒 **[Security](SECURITY.md)**
 
