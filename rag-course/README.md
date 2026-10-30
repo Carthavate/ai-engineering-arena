@@ -4,10 +4,10 @@ Our warm-up before phase 0. Watch together, tick each video on the [lab website]
 
 Playlist: https://www.youtube.com/playlist?list=PLNIQLFWpQMRUMjxfe8o6g3uzJ6LH_VotY
 
-Lesson #1 is our own 3-minute video, made for the arena. Harish's original #1 is still in the playlist if you want the longer version.
+Lessons #1 and #2 are our own 3-minute videos, made for the arena. Harish's originals are still in the playlist if you want the longer versions.
 
 - [ ] #1 [What is RAG? Retrieval-augmented generation explained](https://www.youtube.com/watch?v=FtbpRv1HXQ8)
-- [ ] #2 [Vector embeddings and RAG architecture explained](https://www.youtube.com/watch?v=9iGvXxH_fdE&list=PLNIQLFWpQMRUMjxfe8o6g3uzJ6LH_VotY)
+- [ ] #2 [Vector embeddings and RAG architecture explained](https://www.youtube.com/watch?v=3y_NskhcnjY)
 - [ ] #3 [Build a data ingestion pipeline with Python](https://www.youtube.com/watch?v=LK-OyelN9MU&list=PLNIQLFWpQMRUMjxfe8o6g3uzJ6LH_VotY)
 - [ ] #4 [Document retrieval implementation with LangChain](https://www.youtube.com/watch?v=brbd3AvsJWs&list=PLNIQLFWpQMRUMjxfe8o6g3uzJ6LH_VotY)
 - [ ] #5 [Cosine similarity for vector search explained](https://www.youtube.com/watch?v=nbJVJ1RPBEg&list=PLNIQLFWpQMRUMjxfe8o6g3uzJ6LH_VotY)
