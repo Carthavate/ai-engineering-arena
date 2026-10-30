@@ -230,7 +230,7 @@ export function App() {
       )}
 
       <footer className="foot">
-        Built by TWadi and GhassenJamoussi99 · <a href="https://github.com/TWadi/ai-engineering-arena" target="_blank" rel="noopener">Code on GitHub</a>
+        Built by TWadi and GhassenJamoussi99 · <a href="https://github.com/Carthavate/ai-engineering-arena" target="_blank" rel="noopener">Code on GitHub</a>
       </footer>
     </div>
   );
