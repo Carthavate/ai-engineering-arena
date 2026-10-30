@@ -2,7 +2,7 @@ import type { DuelRecord } from "./duels";
 import { BADGES, type BadgeId, type PlayerStats } from "./gamify";
 import { PHASES } from "./roadmap";
 
-export const SITE_URL = "https://twadi.github.io/ai-engineering-arena/";
+export const SITE_URL = "https://carthavate.github.io/ai-engineering-arena/";
 export const CARD_W = 1200;
 export const CARD_H = 627;
 
