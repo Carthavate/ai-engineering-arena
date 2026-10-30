@@ -4,7 +4,9 @@ Our warm-up before phase 0. Watch together, tick each video on the [lab website]
 
 Playlist: https://www.youtube.com/playlist?list=PLNIQLFWpQMRUMjxfe8o6g3uzJ6LH_VotY
 
-- [ ] #1 [Complete introduction to retrieval augmented generation](https://www.youtube.com/watch?v=63B-3rqRFbQ&list=PLNIQLFWpQMRUMjxfe8o6g3uzJ6LH_VotY)
+Lesson #1 is our own 3-minute video, made for the arena. Harish's original #1 is still in the playlist if you want the longer version.
+
+- [ ] #1 [What is RAG? Retrieval-augmented generation explained](https://www.youtube.com/watch?v=FtbpRv1HXQ8)
 - [ ] #2 [Vector embeddings and RAG architecture explained](https://www.youtube.com/watch?v=9iGvXxH_fdE&list=PLNIQLFWpQMRUMjxfe8o6g3uzJ6LH_VotY)
 - [ ] #3 [Build a data ingestion pipeline with Python](https://www.youtube.com/watch?v=LK-OyelN9MU&list=PLNIQLFWpQMRUMjxfe8o6g3uzJ6LH_VotY)
 - [ ] #4 [Document retrieval implementation with LangChain](https://www.youtube.com/watch?v=brbd3AvsJWs&list=PLNIQLFWpQMRUMjxfe8o6g3uzJ6LH_VotY)
