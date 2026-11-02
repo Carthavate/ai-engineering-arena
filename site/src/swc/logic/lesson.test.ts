@@ -4,10 +4,10 @@ import { PHASES } from "./roadmap";
 
 describe("youtubeId", () => {
   it("reads watch urls with or without a playlist", () => {
-    expect(youtubeId("https://www.youtube.com/watch?v=dHgvDTXVvPA&list=PLNIQLFWpQMRUMjxfe8o6g3uzJ6LH_VotY")).toBe("dHgvDTXVvPA");
-    expect(youtubeId("https://www.youtube.com/watch?v=dHgvDTXVvPA")).toBe("dHgvDTXVvPA");
+    expect(youtubeId("https://www.youtube.com/watch?v=FtbpRv1HXQ8&list=PLexamplePlaylistId0123")).toBe("FtbpRv1HXQ8");
+    expect(youtubeId("https://www.youtube.com/watch?v=FtbpRv1HXQ8")).toBe("FtbpRv1HXQ8");
     expect(youtubeId("https://youtube.com/watch?list=PLx&v=63B-3rqRFbQ&t=42")).toBe("63B-3rqRFbQ");
-    expect(youtubeId("https://m.youtube.com/watch?v=i_v4Vm2KBuc")).toBe("i_v4Vm2KBuc");
+    expect(youtubeId("https://m.youtube.com/watch?v=88_4az1824c")).toBe("88_4az1824c");
   });
 
   it("reads short, embed and shorts urls", () => {
@@ -17,9 +17,9 @@ describe("youtubeId", () => {
   });
 
   it("rejects playlists, other sites, bad ids and junk", () => {
-    expect(youtubeId("https://www.youtube.com/playlist?list=PLNIQLFWpQMRUMjxfe8o6g3uzJ6LH_VotY")).toBeNull();
+    expect(youtubeId("https://www.youtube.com/playlist?list=PLexamplePlaylistId0123")).toBeNull();
     expect(youtubeId("https://karpathy.ai/zero-to-hero.html")).toBeNull();
-    expect(youtubeId("https://evil.com/watch?v=dHgvDTXVvPA")).toBeNull();
+    expect(youtubeId("https://evil.com/watch?v=FtbpRv1HXQ8")).toBeNull();
     expect(youtubeId("https://www.youtube.com/watch?v=short")).toBeNull();
     expect(youtubeId("https://www.youtube.com/watch?v=\"><script>x")).toBeNull();
     expect(youtubeId("javascript:alert(1)")).toBeNull();
@@ -33,8 +33,8 @@ describe("youtubeId", () => {
   });
 
   it("builds privacy-friendly embed and thumbnail urls", () => {
-    expect(embedUrl("dHgvDTXVvPA")).toBe("https://www.youtube-nocookie.com/embed/dHgvDTXVvPA?autoplay=1&rel=0");
-    expect(thumbnailUrl("dHgvDTXVvPA")).toBe("https://i.ytimg.com/vi/dHgvDTXVvPA/hqdefault.jpg");
+    expect(embedUrl("FtbpRv1HXQ8")).toBe("https://www.youtube-nocookie.com/embed/FtbpRv1HXQ8?autoplay=1&rel=0");
+    expect(thumbnailUrl("FtbpRv1HXQ8")).toBe("https://i.ytimg.com/vi/FtbpRv1HXQ8/hqdefault.jpg");
   });
 });
 

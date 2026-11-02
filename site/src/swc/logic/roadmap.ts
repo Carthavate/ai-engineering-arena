@@ -116,7 +116,7 @@ export const PHASES: readonly Phase[] = [
       { id: "p4-4", kind: "learn", title: "Embeddings and vector search with Postgres + pgvector", url: "https://github.com/pgvector/pgvector", source: "pgvector" },
       { id: "p4-5", kind: "learn", title: "Read: AI Engineering, chapters 1–6", source: "Chip Huyen · O'Reilly" },
       { id: "p4-6", kind: "learn", title: "Evals: 50-question test set, score retrieval and answers", url: "https://hamel.dev/blog/posts/evals/", source: "Hamel Husain" },
-      { id: "p4-8", kind: "learn", title: "Rewatch the Complete RAG Tutorial 2026 and build along", url: "https://www.youtube.com/playlist?list=PLNIQLFWpQMRUMjxfe8o6g3uzJ6LH_VotY", source: "Harish Neel · YouTube" },
+      { id: "p4-8", kind: "learn", title: "Revisit the RAG course and build along, with Open RAG's code as the reference", url: "https://github.com/Carthavate/open-rag-engine", source: "Wadi & Ghassen · GitHub" },
       { id: "p4-7", kind: "build", title: "RAG app over your lecture PDFs with cited answers" },
     ],
   },
