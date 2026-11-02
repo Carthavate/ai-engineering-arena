@@ -1,4 +1,4 @@
-# RAG course — Harish Neel, *Complete RAG Tutorial 2026*
+# RAG course
 
 Our warm-up before phase 0. Watch together, tick each video on the [lab website](https://carthavate.github.io/ai-engineering-arena/), and post a note on the site for anything you learned or found unclear.
 
@@ -23,6 +23,10 @@ Lessons #1 to #16 are our own 3-minute videos, made for the arena. Harish's orig
 - [ ] #15 [Reciprocal rank fusion for enhanced RAG performance](https://www.youtube.com/watch?v=-oyJChL9-58)
 - [ ] #16 [Hybrid search: combining vector and keyword search](https://www.youtube.com/watch?v=3--Yj-tB5zI)
 - [ ] #17 [RAG reranking and next steps](https://www.youtube.com/watch?v=VWA15n6uiS4&list=PLNIQLFWpQMRUMjxfe8o6g3uzJ6LH_VotY)
+
+## Finish line: Open RAG
+
+Tick all 17 lessons on the site and the RAG course page unlocks [Open RAG](https://github.com/Carthavate/open-rag-engine): the offline app we built from this course, free. It answers questions from your own folders of notes and PDFs, cites the page, and never sends anything off your computer.
 
 ## Where things go
 

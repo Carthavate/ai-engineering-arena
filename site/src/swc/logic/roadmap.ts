@@ -30,7 +30,7 @@ export const TOTAL_WEEKS = 40;
 
 export const PHASES: readonly Phase[] = [
   {
-    id: "rag", code: "rag_course", short: "RAG", title: "RAG course (Harish Neel)", weeks: [0, 0],
+    id: "rag", code: "rag_course", short: "RAG", title: "RAG course", weeks: [0, 0],
     goal: "A hands-on tour of retrieval augmented generation before the main track starts. Watch together, tick each video, and post a note on anything unclear.",
     ship: "A note for every video in your own words, plus the code from #3 and #6 running on your machine.",
     items: [
