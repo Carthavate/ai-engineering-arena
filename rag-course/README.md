@@ -4,7 +4,7 @@ Our warm-up before phase 0. Watch together, tick each video on the [lab website]
 
 Playlist: https://www.youtube.com/playlist?list=PLNIQLFWpQMRUMjxfe8o6g3uzJ6LH_VotY
 
-Lessons #1 to #16 are our own 3-minute videos, made for the arena. Harish's originals are still in the playlist if you want the longer versions.
+All 17 lessons are our own 3-minute videos, made for the arena. Harish's originals are still in the playlist if you want the longer versions.
 
 - [ ] #1 [What is RAG? Retrieval-augmented generation explained](https://www.youtube.com/watch?v=FtbpRv1HXQ8)
 - [ ] #2 [Vector embeddings and RAG architecture explained](https://www.youtube.com/watch?v=3y_NskhcnjY)
@@ -22,7 +22,7 @@ Lessons #1 to #16 are our own 3-minute videos, made for the arena. Harish's orig
 - [ ] #14 [Multi-query RAG for better search results](https://www.youtube.com/watch?v=y--F1OTAdhc)
 - [ ] #15 [Reciprocal rank fusion for enhanced RAG performance](https://www.youtube.com/watch?v=-oyJChL9-58)
 - [ ] #16 [Hybrid search: combining vector and keyword search](https://www.youtube.com/watch?v=3--Yj-tB5zI)
-- [ ] #17 [RAG reranking and next steps](https://www.youtube.com/watch?v=VWA15n6uiS4&list=PLNIQLFWpQMRUMjxfe8o6g3uzJ6LH_VotY)
+- [ ] #17 [RAG reranking and next steps](https://www.youtube.com/watch?v=qiEQg-l3IoQ)
 
 ## Finish line: Open RAG
 
