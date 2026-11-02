@@ -1,4 +1,4 @@
-"""Question bank for the RAG course track (Harish Neel, Complete RAG Tutorial 2026).
+"""Question bank for the RAG course track (our own 17 lessons).
 
 Each entry: (question, correct answer, [three wrong answers], explanation).
 Run `python supabase/quiz-bank/build.py` to regenerate the SQL seed after editing.

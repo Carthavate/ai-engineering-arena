@@ -24,7 +24,7 @@ describe("availableCards", () => {
   it("labels cards for the picker", () => {
     expect(cardLabel({ type: "overall" })).toBe("My progress");
     expect(cardLabel({ type: "badge", id: "quiz-whiz" })).toBe("Badge: Quiz Whiz");
-    expect(cardLabel({ type: "phase", id: "rag" })).toBe("Phase: RAG course (Harish Neel)");
+    expect(cardLabel({ type: "phase", id: "rag" })).toBe("Phase: RAG course");
   });
 });
 
@@ -49,7 +49,7 @@ describe("buildCard", () => {
   it("describes the phase on a phase card", () => {
     const c = buildCard({ type: "phase", id: "rag" }, input);
     expect(c.eyebrow).toBe("Phase cleared");
-    expect(c.headline).toBe("RAG course (Harish Neel)");
+    expect(c.headline).toBe("RAG course");
     expect(c.stats[0]).toEqual({ label: "Quests", value: "17" });
     expect(c.caption).toContain("Phase cleared: RAG course");
   });

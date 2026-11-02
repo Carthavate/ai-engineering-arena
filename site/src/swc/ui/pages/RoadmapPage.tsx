@@ -3,8 +3,10 @@ import { countDone, percent, phaseForWeek, weekNumber, weekStart } from "../../l
 import { PHASES, START_DATE } from "../../logic/roadmap";
 import { href } from "../../logic/route";
 import { itemXp, XP } from "../../logic/gamify";
+import { openRagReward } from "../../logic/openRag";
 import type { LabData } from "../labData";
 import { Avatar } from "../components/Avatar";
+import { OpenRagLoot } from "../components/OpenRagLoot";
 import { QuestRow } from "../components/QuestRow";
 
 const fmt = (d: Date) => d.toLocaleDateString(undefined, { day: "numeric", month: "short" });
@@ -18,6 +20,7 @@ export function RoadmapPage({ data, phaseId }: { readonly data: LabData; readonl
   const when = from < 1 ? "Before week 1" : from === to ? `Week ${from}` : `Weeks ${from}–${to}`;
   const phaseXp = phase.items.reduce((s, i) => s + itemXp(i), 0) + XP.phaseComplete;
   const myDone = me ? progress[me.id] ?? {} : {};
+  const loot = openRagReward(phase, myDone);
   const worldRef = useRef<HTMLOListElement>(null);
 
   // Keep the selected phase visible on the scrollable map.
@@ -92,6 +95,8 @@ export function RoadmapPage({ data, phaseId }: { readonly data: LabData; readonl
           <p>{phase.ship}</p>
           <span className="xp-chip">+{XP.phaseComplete} XP when the phase is cleared</span>
         </div>
+
+        {loot && <OpenRagLoot reward={loot} />}
       </section>
     </div>
   );
