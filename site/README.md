@@ -33,6 +33,8 @@ Roadmap content lives in `src/roadmap.ts`. Item ids (`p3-4`) are stored in the d
    - Redirect URLs: add `https://carthavate.github.io/ai-engineering-arena/` and `http://localhost:5173/ai-engineering-arena/`
 6. **GitHub repo → Settings → Secrets and variables → Actions → Variables:** add `SUPABASE_URL` and `SUPABASE_ANON_KEY` (Supabase → Project Settings → API). These are public values; never put the `service_role` key anywhere in this repo.
 
+Supabase pauses a free project after 7 days without activity. The `Keep Supabase awake` workflow (`.github/workflows/keep-supabase-awake.yml`) reads one row twice a week with these same variables, so the project stays awake even when nobody visits the site.
+
 To add a member later, run in the SQL editor:
 
 ```sql
