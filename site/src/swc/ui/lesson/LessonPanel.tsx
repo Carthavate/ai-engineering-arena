@@ -7,6 +7,7 @@ import type { LabData } from "../labData";
 import { Prose } from "../lab/Prose";
 import { LessonAsk } from "./LessonAsk";
 import { LessonFriends } from "./LessonFriends";
+import { LessonLab } from "./LessonLab";
 import { LessonNotes } from "./LessonNotes";
 import { LessonVideo } from "./LessonVideo";
 import "./lesson.css";
@@ -106,6 +107,8 @@ export default function LessonPanel({ itemId, data, onGo, onClose }: Props) {
             )}
           </div>
         ) : null}
+
+        <LessonLab item={item} data={data} />
 
         {notes.length > 0 && (
           <details className="lesson-section lesson-lecture" open>

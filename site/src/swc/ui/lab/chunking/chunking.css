@@ -1,0 +1,102 @@
+/* Lab "Chunking": the document on a drawing sheet, each chunk a tint, overlaps striped, cuts marked.
+   Colours come from ../blueprint.css. No animation: the only motion is the colours moving as you drag a slider. */
+.chunk-lab { display: grid; gap: 14px; }
+
+/* ---- Controls ---- */
+.ck-controls { display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: center; }
+.ck-seg { display: inline-flex; border: var(--border); border-radius: 12px; overflow: hidden; box-shadow: var(--lift-sm); }
+.ck-seg button {
+  padding: 7px 14px; border: 0; background: var(--card); color: var(--ink); cursor: pointer;
+  font: 600 13px var(--font-mono); border-right: 2px solid var(--edge); white-space: nowrap;
+}
+.ck-seg button:last-child { border-right: 0; }
+.ck-seg button.is-on { background: var(--ink); color: var(--card); }
+.ck-seg button:focus-visible { outline: 3px solid var(--cobalt); outline-offset: -3px; }
+.ck-note { margin: 0; font-size: 14px; line-height: 1.5; color: var(--muted); max-width: 80ch; }
+.ck-embed { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.ck-embed .peek-dim { color: var(--muted); font-size: 13px; }
+
+.ck-stats { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 0; font: 500 13px var(--font-mono); }
+.ck-stats b { font-weight: 700; }
+.ck-good b { color: var(--mint); }
+.ck-bad b { color: var(--tomato); }
+
+/* ---- The sheet ---- */
+.ck-sheet { position: relative; border: var(--border); border-radius: 14px; background: var(--paper); box-shadow: var(--lift-sm); padding: 20px 22px 50px; }
+.ck-sheet::before {
+  content: ""; position: absolute; inset: 0; border-radius: 12px; pointer-events: none;
+  background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 20px 20px; opacity: 0.6;
+}
+.ck-doc { position: relative; white-space: pre-wrap; font: 400 16px/2.05 var(--font-body); color: var(--pen); }
+.ck-span { padding: 3px 0; border-radius: 3px; box-decoration-break: clone; -webkit-box-decoration-break: clone; transition: box-shadow 0.15s; }
+.ck-tint-0 { background: #c6ebe5; }
+.ck-tint-1 { background: #fde3b0; }
+.ck-tint-2 { background: #d9e0ff; }
+.ck-tint-3 { background: #f6d3e2; }
+.ck-span-gap { background: transparent; }
+.ck-span-overlap { background-image: repeating-linear-gradient(135deg, rgb(36 48 77 / 0.28) 0 2px, transparent 2px 6px); }
+.ck-span.is-focused { box-shadow: 0 2px 0 var(--pen), 0 -2px 0 var(--pen); }
+.ck-span.is-retrieved { outline: 2px solid var(--live); outline-offset: 1px; }
+.ck-span.is-answer { text-decoration: underline 2.5px var(--hot); text-underline-offset: 5px; }
+.ck-cut { display: inline-block; width: 0; height: 1.4em; vertical-align: -0.35em; border-left: 2px solid var(--pen-soft); margin: 0 2px; position: relative; }
+.ck-cut-broken { border-left: 3px solid var(--hot); }
+.ck-cut-broken::after { content: "✂"; position: absolute; top: -1.05em; left: -0.55em; font-size: 13px; line-height: 1; color: var(--hot); }
+.ck-draft { position: relative; width: 100%; min-height: 260px; resize: vertical; font: 400 15px/1.7 var(--font-body); color: var(--pen); background: var(--fill); border: 2px solid var(--pen); border-radius: 8px; padding: 10px; }
+.ck-sheet-tools { position: absolute; right: 12px; bottom: 10px; display: flex; gap: 6px; }
+.ck-tool {
+  padding: 4px 10px; border: 2px solid var(--pen); border-radius: 8px; background: var(--fill); color: var(--pen);
+  font: 600 12px var(--font-mono); cursor: pointer; box-shadow: 2px 2px 0 var(--pen);
+}
+.ck-tool:disabled { opacity: 0.45; cursor: default; box-shadow: none; }
+.ck-tool:focus-visible { outline: 3px solid var(--cobalt); outline-offset: 1px; }
+
+/* ---- Semantic breakpoints chart ---- */
+.bp-chart { margin: 0; padding: 12px 14px 10px; background: var(--paper); border: var(--border); border-radius: 14px; box-shadow: var(--lift-sm); }
+.bp-chart svg { display: block; width: 100%; height: auto; }
+.bp-axis { stroke: var(--pen-soft); stroke-width: 1.5; }
+.bp-tick { font: 500 10.5px var(--font-mono); fill: var(--pen-mid); }
+.bp-bar rect { fill: #b9ddd8; stroke: var(--pen); stroke-width: 1.2; }
+.bp-bar.is-cut rect { fill: var(--hot); }
+.bp-threshold { stroke: var(--hot); stroke-width: 2; stroke-dasharray: 6 5; }
+.bp-label { font: 600 11px var(--font-mono); fill: var(--hot); paint-order: stroke; stroke: var(--paper); stroke-width: 4px; }
+.bp-chart .peek-dim { color: var(--pen-mid); font-size: 12.5px; margin-top: 4px; }
+
+/* ---- Inspector and answer check ---- */
+.ck-below { display: grid; gap: 14px; grid-template-columns: minmax(0, 1fr); align-items: start; }
+@media (min-width: 860px) {
+  .ck-below { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+}
+.ck-card {
+  display: grid; gap: 10px; align-content: start; min-width: 0; padding: 14px 16px;
+  background: var(--fill); color: var(--pen); border: 2.5px solid var(--pen); border-radius: 14px; box-shadow: 3px 3px 0 var(--pen);
+}
+.ck-card p { margin: 0; font-size: 14px; line-height: 1.5; }
+.ck-card h3 { margin: 0; font: 400 20px/1.15 var(--font-display); }
+.ck-card .peek-dim { color: var(--pen-mid); font-size: 12.5px; }
+.ck-card-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.ck-step { display: flex; gap: 4px; }
+.ck-step button {
+  width: 32px; height: 30px; border: 2px solid var(--pen); border-radius: 8px; background: var(--fill-2); color: var(--pen);
+  font: 700 15px var(--font-body); cursor: pointer; box-shadow: 2px 2px 0 var(--pen);
+}
+.ck-step button:disabled { opacity: 0.4; cursor: default; box-shadow: none; }
+.ck-step button:focus-visible { outline: 3px solid var(--cobalt); outline-offset: 1px; }
+.ck-facts { display: flex; flex-wrap: wrap; gap: 6px; font: 600 12px var(--font-mono); }
+.ck-facts span { padding: 1px 8px; border-radius: 999px; background: var(--fill-2); }
+.ck-facts .ck-flag { background: var(--hot-soft); color: #8a2a10; }
+.ck-facts .ck-ok { background: var(--live-soft); color: #0d5f5a; }
+.ck-text { padding: 10px 12px; background: var(--paper); border-radius: 8px; border: 1.5px solid var(--grid); white-space: pre-wrap; }
+.ck-verdict { padding: 10px 12px; border-radius: 8px; font-weight: 700; }
+.verdict-whole { background: var(--live-soft); }
+.verdict-missed { background: #fde3b0; }
+.verdict-split { background: var(--hot-soft); }
+.verdict-absent, .verdict-nothing { background: var(--fill-2); }
+
+@media (max-width: 640px) {
+  .ck-sheet { padding: 14px 14px 50px; }
+  .ck-doc { font-size: 15px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ck-span { transition: none; }
+}

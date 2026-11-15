@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { useRte } from "../../../rte/RteContext";
 import { RagAnswer } from "./RagAnswer";
-import { chunkText, cosine, pca2d, rank, type Vec } from "../../logic/lab/vectors";
+import { LoadNote, useEmbed } from "./useEmbed";
+import { chunkText, cosine, pca2d, rank } from "../../logic/lab/vectors";
 
 const SAMPLE_SENTENCES = [
   "The cat sat on the warm windowsill.",
@@ -13,38 +13,6 @@ const SAMPLE_SENTENCES = [
 ].join("\n");
 
 const SAMPLE_DOC = `Retrieval augmented generation (RAG) lets a language model answer questions about documents it was never trained on. First, documents are split into chunks, usually a few hundred characters with some overlap so that sentences cut at a boundary still appear whole somewhere. Each chunk is turned into an embedding, a list of numbers that captures its meaning, and stored in a vector database such as Chroma. When a user asks a question, the question is embedded with the same model, and the database returns the chunks whose embeddings are most similar, usually measured with cosine similarity. Those chunks are pasted into the prompt as context, and the model writes an answer grounded in them. Hybrid search adds keyword matching with BM25, which helps with exact terms like product codes. A reranker can then reorder the top results with a slower but more accurate cross-encoder.`;
-
-type Load = { readonly busy: boolean; readonly pct: number | null; readonly error: string | null };
-const IDLE: Load = { busy: false, pct: null, error: null };
-
-function useEmbed() {
-  const { embedder } = useRte();
-  const [load, setLoad] = useState<Load>(IDLE);
-  const run = async (texts: string[]): Promise<Vec[] | null> => {
-    setLoad({ busy: true, pct: null, error: null });
-    try {
-      const vectors = await embedder.embed(texts, (pct) => setLoad({ busy: true, pct, error: null }));
-      setLoad(IDLE);
-      return vectors;
-    } catch (err) {
-      console.error("Embedding failed", err);
-      setLoad({ busy: false, pct: null, error: "Couldn't run the model. Check your connection (the first run downloads about 23 MB) and try again." });
-      return null;
-    }
-  };
-  return { load, run };
-}
-
-function LoadNote({ load }: { readonly load: Load }) {
-  if (load.error) return <p className="form-error">{load.error}</p>;
-  if (!load.busy) return null;
-  return (
-    <div className="model-load" role="status">
-      <span>{load.pct === null ? "Running the model…" : `Downloading the model (first time only)… ${load.pct}%`}</span>
-      {load.pct !== null && <span className="load-bar"><i style={{ width: `${load.pct}%` }} /></span>}
-    </div>
-  );
-}
 
 /** Color for a similarity in [-1, 1]: pale to strong cobalt (reads in both themes on the card background). */
 function heat(sim: number): string {

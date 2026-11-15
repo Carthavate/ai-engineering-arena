@@ -1,0 +1,27 @@
+/* The Lab explorers' drawing-sheet palette: cream paper, fine grid, ink outlines, teal for what's active,
+   coral for what's wrong. Sheets keep these colours in dark mode, like a printed drawing. */
+.blueprint {
+  --paper: #f7efdf;
+  --grid: #ece1c9;
+  --pen: #24304d;
+  --pen-soft: #a59c86;
+  --pen-mid: #6b6553;
+  --fill: #fffaf0;
+  --fill-2: #efe2c6;
+  --live: #14968f;
+  --live-soft: #c6ebe5;
+  --hot: #e5603c;
+  --hot-soft: #ffd9cc;
+}
+
+/* Controls shared by the explorers: labelled sliders and pressable chips. */
+.bp-slider { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 6px; font: 600 12px var(--font-mono); min-width: 190px; }
+.bp-slider b { color: var(--cobalt); }
+.bp-slider input { flex-basis: 100%; accent-color: var(--mint); }
+.bp-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.bp-chips button {
+  padding: 4px 10px; border: 2px solid var(--pen); border-radius: 999px; background: var(--fill); color: var(--pen);
+  font: 600 13px var(--font-body); cursor: pointer; text-align: left;
+}
+.bp-chips button.is-on { background: var(--pen); color: var(--fill); }
+.bp-chips button:focus-visible { outline: 3px solid var(--cobalt); outline-offset: 1px; }
