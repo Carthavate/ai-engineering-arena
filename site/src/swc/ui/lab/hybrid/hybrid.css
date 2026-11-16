@@ -1,0 +1,76 @@
+/* Lab "Hybrid search": BM25 and vector rankings on drawing-sheet cards, then their fusion.
+   Colours and shared controls come from ../blueprint.css. No animation. */
+.hybrid-lab { display: grid; gap: 14px; }
+
+.hy-search { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: center; max-width: 640px; }
+.hy-notice { margin: 0; font-size: 14px; line-height: 1.5; color: var(--muted); max-width: 90ch; }
+.hy-notice b { color: var(--ink); }
+
+/* ---- Cards ---- */
+.hy-card {
+  display: grid; gap: 12px; min-width: 0; padding: 14px 16px;
+  background: var(--fill); color: var(--pen); border: 2.5px solid var(--pen); border-radius: 14px; box-shadow: 3px 3px 0 var(--pen);
+}
+.hy-card p { margin: 0; }
+.hy-card h3 { margin: 0; font: 400 20px/1.15 var(--font-display); }
+.hy-card h4 { margin: 0 0 6px; font: 600 11px var(--font-mono); text-transform: uppercase; letter-spacing: 0.1em; color: var(--pen-mid); }
+.hy-card-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 4px 12px; }
+.hy-dim { color: var(--pen-mid); font-size: 12.5px; line-height: 1.45; }
+.hy-empty { padding: 10px 12px; border-radius: 8px; background: var(--fill-2); font-size: 13.5px; }
+.hy-quote { font-size: 14px; line-height: 1.5; padding: 8px 10px; border-left: 3px solid var(--live); background: var(--paper); border-radius: 0 6px 6px 0; }
+.hy-embed { display: grid; gap: 8px; justify-items: start; }
+
+/* ---- Ranked lists ---- */
+.hy-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 5px; }
+.hy-row, .fu-item {
+  width: 100%; display: grid; grid-template-columns: 22px auto minmax(40px, 1fr) auto; gap: 8px; align-items: center;
+  padding: 5px 8px; border: 1.5px solid transparent; border-radius: 8px; background: var(--paper); color: var(--pen); font: inherit; text-align: left;
+}
+.hy-row { cursor: pointer; }
+.hy-row:hover, .hy-row.is-on, .fu-item.is-hovered, .fu-item:focus-visible { border-color: var(--pen); }
+.hy-row.is-on { background: var(--live-soft); }
+.hy-row:focus-visible, .fu-item:focus-visible { outline: 3px solid var(--cobalt); outline-offset: 1px; }
+.hy-rank { font: 700 13px var(--font-mono); color: var(--pen-mid); text-align: right; }
+.hy-chip {
+  justify-self: start; white-space: nowrap; padding: 1px 8px; border-radius: 999px; border: 1.5px solid var(--pen);
+  background: hsl(var(--hue) 70% 86%); font: 600 12.5px var(--font-body); color: var(--pen);
+}
+.hy-bar { height: 8px; border-radius: 4px; background: var(--fill-2); overflow: hidden; }
+.hy-bar i { display: block; height: 100%; background: var(--live); }
+.hy-score { font: 600 12px var(--font-mono); }
+
+/* ---- BM25 ---- */
+.bm-grid { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 900px) {
+  .bm-grid { grid-template-columns: minmax(0, 1.25fr) minmax(280px, 1fr); }
+}
+.bm-breakdown { display: grid; gap: 8px; margin-top: 12px; }
+.bm-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.bm-table th, .bm-table td { padding: 4px 8px; text-align: right; border-bottom: 1px solid var(--grid); }
+.bm-table th:first-child { text-align: left; }
+.bm-table thead th { font: 600 11px var(--font-mono); text-transform: uppercase; letter-spacing: 0.05em; color: var(--pen-mid); }
+.bm-table tfoot th, .bm-table tfoot td { border-bottom: 0; border-top: 2px solid var(--pen); }
+.bm-table code { font: 600 12.5px var(--font-mono); background: var(--fill-2); padding: 0 5px; border-radius: 4px; }
+.bm-tune { display: grid; gap: 12px; align-content: start; }
+
+.sat-chart { margin: 0; max-width: 440px; padding: 8px 10px; background: var(--paper); border: 1.5px solid var(--grid); border-radius: 10px; }
+.sat-chart svg { display: block; width: 100%; height: auto; }
+.sat-axis { stroke: var(--pen-soft); stroke-width: 1.5; }
+.sat-cap { stroke: var(--pen-soft); stroke-width: 1.2; stroke-dasharray: 4 4; }
+.sat-tick { font: 500 10.5px var(--font-mono); fill: var(--pen-mid); }
+.sat-line { fill: none; stroke: var(--live); stroke-width: 3; stroke-linejoin: round; }
+.sat-long { stroke: var(--hot); stroke-dasharray: 7 5; }
+.sat-legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12px; color: var(--pen-mid); }
+.sat-key { display: inline-block; width: 18px; height: 0; border-top: 3px solid var(--live); vertical-align: middle; margin-right: 4px; }
+.sat-key-long { border-top: 3px dashed var(--hot); }
+
+/* ---- Fusion ---- */
+.fu-tune { display: flex; flex-wrap: wrap; gap: 12px 24px; }
+.fu-cols { display: grid; gap: 14px; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 900px) {
+  .fu-cols { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.3fr); }
+}
+.fu-col { min-width: 0; padding: 10px; background: var(--paper); border-radius: 10px; border: 1.5px solid var(--grid); }
+.fu-item { grid-template-columns: 22px auto minmax(0, 1fr); cursor: default; background: var(--fill); }
+.fu-detail { justify-self: end; font: 500 11.5px var(--font-mono); color: var(--pen-mid); text-align: right; }
+.fu-detail b { color: var(--pen); }

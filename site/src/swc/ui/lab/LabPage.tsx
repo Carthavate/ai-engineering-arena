@@ -6,6 +6,9 @@ import { CHALLENGES, findChallenge } from "../../logic/lab/challenges";
 import { ChallengeView } from "./ChallengeView";
 import { AskCourse } from "./AskCourse";
 import { Playground } from "./Playground";
+import { ChunkingLab } from "./chunking/ChunkingLab";
+import { HybridLab } from "./hybrid/HybridLab";
+import { HowRagWorks } from "./rag/HowRagWorks";
 import { RacePanel } from "./RacePanel";
 import { Scratchpad } from "./Scratchpad";
 import { TokenizerLab } from "./TokenizerLab";
@@ -15,6 +18,9 @@ const TABS = [
   { id: "", label: "Coding challenges" },
   { id: "ask", label: "Ask the course" },
   { id: "scratchpad", label: "Python scratchpad" },
+  { id: "how-rag-works", label: "How RAG works" },
+  { id: "chunking", label: "Chunking" },
+  { id: "hybrid-search", label: "Hybrid search" },
   { id: "playground", label: "Embeddings & RAG" },
   { id: "tokenizer", label: "Tokenizers" },
 ] as const;
@@ -76,6 +82,12 @@ export default function LabPage({ data, sub }: { readonly data: LabData; readonl
 
       {challenge ? (
         <ChallengeView key={challenge.id} challenge={challenge} data={data} />
+      ) : tab === "how-rag-works" ? (
+        <HowRagWorks />
+      ) : tab === "chunking" ? (
+        <ChunkingLab />
+      ) : tab === "hybrid-search" ? (
+        <HybridLab />
       ) : tab === "playground" ? (
         <Playground />
       ) : tab === "ask" ? (

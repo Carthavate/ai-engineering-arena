@@ -79,3 +79,19 @@ dialog.lesson::backdrop { background: rgb(18 20 41 / 0.6); }
 @media (prefers-reduced-motion: reduce) {
   dialog.lesson[open] { animation: none; }
 }
+
+/* Practise in the Lab: one card per explore page or coding challenge that goes with the lesson. */
+.lesson-lab { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); }
+.lesson-lab-card {
+  display: grid; gap: 6px; align-content: start; height: 100%; padding: 10px 12px; color: var(--ink); text-decoration: none;
+  background: var(--card-2); border: var(--border); border-radius: 12px; box-shadow: var(--lift-sm); transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+.lesson-lab-card:hover, .lesson-lab-card:focus-visible { transform: translate(-2px, -2px); box-shadow: var(--lift); }
+.lesson-lab-card:focus-visible { outline: 3px solid var(--cobalt); outline-offset: 2px; }
+.lesson-lab-tags { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.lesson-lab-kind { font: 600 11px var(--font-mono); text-transform: uppercase; letter-spacing: 0.08em; padding: 1px 7px; border-radius: 999px; border: 2px solid var(--edge); background: var(--mint); color: #10112a; }
+.lesson-lab-kind.kind-challenge { background: var(--sun); }
+.lesson-lab-title { font: 400 18px/1.2 var(--font-display); }
+@media (prefers-reduced-motion: reduce) {
+  .lesson-lab-card { transition: none; }
+}

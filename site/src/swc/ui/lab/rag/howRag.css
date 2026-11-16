@@ -1,0 +1,190 @@
+/* Lab "How RAG works": a flat engineering drawing (cream paper, fine grid, ink outlines with hard shadows,
+   teal for what's active, coral for what's wrong) framed in the site's sticker style.
+   Colours come from ../blueprint.css.
+   Motion is limited to one thing: a lit wire draws itself in once, then its arrowhead appears. */
+.how-rag { display: grid; gap: 14px; }
+
+/* ---- The drawing: always the full width of the panel ---- */
+.scene-sheet { position: relative; border: var(--border); border-radius: 14px; overflow: hidden; background: var(--paper); box-shadow: var(--lift-sm); }
+.scene-svg { display: block; width: 100%; height: auto; aspect-ratio: 1040 / 470; user-select: none; }
+.scene-sheet .paper { fill: var(--paper); }
+.grid-line { fill: none; stroke: var(--grid); stroke-width: 1; }
+.lane rect { fill: rgb(255 255 255 / 0.4); stroke: #d9ccb0; stroke-width: 1.5; }
+.sheet-note { font: 600 10.5px var(--font-mono); letter-spacing: 0.1em; fill: var(--pen-soft); }
+.lane text { font: 600 12px var(--font-mono); letter-spacing: 0.16em; fill: var(--pen-soft); }
+
+.wire path { fill: none; stroke: var(--pen-soft); stroke-width: 2; stroke-linejoin: round; }
+.wire .arrow { fill: var(--pen-soft); }
+.wire-norag path { stroke-dasharray: 2 6; stroke-linecap: round; }
+
+.wire-lit path {
+  fill: none; stroke: var(--live); stroke-width: 4; stroke-linejoin: round; stroke-linecap: round;
+  stroke-dasharray: 1; stroke-dashoffset: 1; animation: wire-draw 700ms cubic-bezier(0.45, 0, 0.2, 1) forwards;
+}
+.wire-lit .arrow { fill: var(--live); opacity: 0; animation: arrow-in 180ms ease-out 620ms forwards; }
+.wire-lit-norag path { stroke: var(--hot); }
+.wire-lit-norag .arrow { fill: var(--hot); }
+@keyframes wire-draw { to { stroke-dashoffset: 0; } }
+@keyframes arrow-in { to { opacity: 1; } }
+
+.part { cursor: pointer; outline: none; }
+.part .hit { fill: transparent; }
+.part .fill { fill: var(--fill); stroke: var(--pen); stroke-width: 2; stroke-linejoin: round; transition: fill 0.35s ease; }
+.part .fill.top { fill: var(--fill-2); }
+.part .pin { fill: var(--pen); }
+.part .bar { fill: var(--live); }
+.part .band { fill: var(--pen); }
+.ink-line { fill: none; stroke: #9a917b; stroke-width: 2; stroke-linecap: round; }
+.src-line { stroke: var(--live); stroke-width: 3; stroke-linecap: round; }
+.cut-line { stroke: var(--hot); stroke-width: 1.8; stroke-dasharray: 4 4; }
+.ink-text { font: 600 15px var(--font-mono); fill: var(--pen); }
+.band-text { font: 600 9px var(--font-mono); letter-spacing: 0.12em; fill: var(--paper); }
+.chip-text { font: 400 20px var(--font-display); fill: var(--pen); }
+.glyph { font: 400 34px var(--font-display); fill: var(--pen); }
+.glyph-ok { fill: var(--live); }
+.glyph-bad { fill: var(--hot); }
+.part-label { font: 600 13px var(--font-mono); letter-spacing: 0.06em; fill: var(--pen); transition: fill 0.35s ease; }
+
+/* Hard offset shadow: the same drawing again, solid ink, behind and 4px down-right. */
+.part .shadow * { fill: var(--pen) !important; stroke: var(--pen) !important; }
+.part .shadow text { display: none; }
+
+.part:hover .fill { fill: #fff; }
+.part.is-lit .fill { fill: var(--live-soft); }
+.part.is-lit .fill.top { fill: #93d5cb; }
+.part.is-lit .part-label { fill: var(--live); }
+.part.is-inspected .hit { fill: rgb(229 96 60 / 0.08); stroke: var(--hot); stroke-width: 2; }
+.part.is-inspected .part-label { fill: var(--hot); }
+.part:focus-visible .hit { stroke: var(--cobalt); stroke-width: 3; }
+
+/* ---- Below the drawing: the inspector beside the walkthrough / Try it panel ---- */
+.how-rag-below { display: grid; gap: 14px; grid-template-columns: minmax(0, 1fr); align-items: start; }
+@media (min-width: 900px) {
+  .how-rag-below { grid-template-columns: minmax(0, 1.35fr) minmax(280px, 1fr); }
+}
+
+.inspector {
+  min-width: 0; min-height: 230px; padding: 14px 16px; display: grid; gap: 10px; align-content: start;
+  background: var(--fill); color: var(--pen); border: 2.5px solid var(--pen); border-radius: 14px; box-shadow: 3px 3px 0 var(--pen);
+}
+.inspector p { margin: 0; font-size: 14px; line-height: 1.5; }
+.inspector h3 { margin: 0; font: 400 21px/1.15 var(--font-display); }
+.inspector h4 { margin: 0 0 6px; font: 600 11px var(--font-mono); text-transform: uppercase; letter-spacing: 0.1em; color: #7d755f; }
+.inspector .play-kicker { color: #7d755f; }
+.inspector .link-btn { color: #2f47d6; text-align: left; }
+.inspector-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 10px; align-items: center; }
+.inspector-head .play-kicker { grid-column: 1 / -1; }
+.inspector-head .btn { color: var(--pen); background: var(--fill-2); border-color: var(--pen); box-shadow: 2px 2px 0 var(--pen); }
+.inspector-cols, .inspector-intro { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 640px) {
+  .inspector-cols { grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); }
+  .inspector-intro { grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); }
+}
+.inspector-inside { display: grid; gap: 6px; align-content: start; min-width: 0; }
+.inspector-intro > div { display: grid; gap: 8px; align-content: start; }
+.inspector .play-parts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+.peek-list, .peek-chunks { margin: 0; padding: 0 0 0 16px; display: grid; gap: 6px; font-size: 13.5px; }
+.peek-list { list-style: none; padding: 0; }
+.peek-chunks li { background: var(--fill-2); border-radius: 4px; padding: 3px 7px; }
+.inspector code { font: 500 12px var(--font-mono); background: var(--fill-2); padding: 0 4px; border-radius: 4px; }
+.inspector .peek-dim { color: #6b6553; font-size: 12.5px; }
+.inspector .peek-vector { font: 500 13px/1.9 var(--font-mono); }
+.peek-vector b { color: var(--live); }
+.peek-vector small { font-size: 10px; color: #6b6553; margin-left: 2px; vertical-align: super; }
+.peek-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.peek-table td { padding: 4px 6px; border-top: 1px solid var(--grid); vertical-align: top; }
+.peek-table tr.is-hit td { background: var(--live-soft); }
+.peek-score { width: 40px; font: 600 11.5px var(--font-mono); text-align: right; color: var(--live); }
+.inspector .peek-quote { font: 400 18px/1.3 var(--font-display); }
+.peek-pre { min-width: 0; overflow: hidden; font: 500 11.5px/1.5 var(--font-mono); background: var(--fill-2); border-radius: 6px; padding: 8px 10px; }
+.peek-line { white-space: pre-wrap; overflow-wrap: anywhere; min-height: 1.5em; }
+.peek-line + .peek-line { margin-top: 2px; }
+.inspector .peek-answer { font-weight: 700; padding: 8px 10px; border-radius: 6px; }
+.peek-answer.answer-grounded { background: var(--live-soft); }
+.peek-answer.answer-guess { background: #ffd9cc; }
+.peek-answer.answer-unknown { background: var(--fill-2); }
+
+/* ---- The side panel ---- */
+.play-panel { display: flex; flex-direction: column; min-width: 0; border: var(--border); border-radius: 14px; background: var(--card); box-shadow: var(--lift-sm); overflow: hidden; }
+.play-tabs { display: flex; border-bottom: var(--border); background: var(--card-2); }
+.play-tabs button {
+  flex: 1; padding: 9px 6px; border: 0; background: none; color: var(--muted); cursor: pointer;
+  font: 600 12px var(--font-mono); text-transform: uppercase; letter-spacing: 0.06em; border-bottom: 3px solid transparent;
+}
+.play-tabs button.is-on { color: var(--ink); border-bottom-color: var(--cobalt); background: var(--card); }
+.play-tabs button:focus-visible { outline: 3px solid var(--cobalt); outline-offset: -3px; }
+.play-tabpanel[hidden] { display: none; }
+.play-tabpanel { flex: 1; min-height: 0; padding: 14px; overflow-y: auto; overscroll-behavior: contain; }
+
+.play-copy { display: grid; gap: 8px; align-content: start; }
+.play-copy h3 { margin: 0; font: 400 20px/1.15 var(--font-display); }
+.play-copy p { margin: 0; font-size: 14.5px; line-height: 1.5; }
+.play-kicker { font: 600 11px var(--font-mono) !important; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); }
+.play-stage { justify-self: start; font: 600 11px var(--font-mono) !important; text-transform: uppercase; letter-spacing: 0.08em; padding: 2px 8px; border-radius: 999px; border: 2px solid var(--edge); background: var(--card-2); }
+.play-stage.stage-retrieval, .play-stage.stage-indexing { background: #c9ece7; color: #0d5f5a; }
+.play-stage.stage-augmentation { background: #ffe7a8; color: #6b4a00; }
+.play-stage.stage-generation { background: #d9e0ff; color: #24308f; }
+.play-stage.stage-no-retrieval { background: #ffd9cc; color: #8a2a10; }
+
+.play-parts { list-style: none; margin: 4px 0 0; padding: 0; display: grid; gap: 4px; font-size: 14px; }
+.link-btn { border: 0; padding: 0; background: none; color: var(--cobalt); font: 700 14px var(--font-body); cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+.link-btn:focus-visible { outline: 3px solid var(--cobalt); outline-offset: 2px; border-radius: 3px; }
+
+.seg { display: flex; flex-wrap: wrap; gap: 4px; }
+.seg button {
+  padding: 4px 9px; border: 2px solid var(--edge); border-radius: 999px; background: var(--card); color: var(--ink);
+  font: 600 11.5px var(--font-mono); cursor: pointer;
+}
+.seg button.is-on { background: var(--ink); color: var(--card); }
+.seg button:focus-visible { outline: 3px solid var(--cobalt); outline-offset: 1px; }
+
+.walk-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 4px; }
+.walk-dots { display: inline-flex; gap: 5px; margin-left: auto; }
+.walk-dots button { width: 10px; height: 10px; padding: 0; border-radius: 50%; border: 2px solid var(--edge); background: var(--card); cursor: pointer; }
+.walk-dots button.is-on { background: var(--cobalt); }
+.walk-dots button:focus-visible { outline: 3px solid var(--cobalt); outline-offset: 2px; }
+
+/* ---- Try it ---- */
+.tryit { display: grid; gap: 10px; }
+.tryit p { margin: 0; }
+.tryit-examples { display: flex; flex-wrap: wrap; gap: 6px; }
+.tryit-examples .chip-btn { font-size: 12px; text-align: left; padding: 3px 9px; }
+.tryit-form { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: center; }
+.tryit-toggle { grid-column: 1 / -1; display: flex; gap: 8px; align-items: center; font-weight: 700; font-size: 14px; cursor: pointer; }
+.tryit-toggle input { width: 18px; height: 18px; accent-color: var(--mint); }
+.tryit-results { display: grid; gap: 10px; }
+.tryit-block { display: grid; gap: 6px; }
+.tryit-block h5, .tryit-answer h5 { margin: 0; font: 600 11.5px var(--font-mono); text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+.tryit-block summary { cursor: pointer; }
+.tryit-block summary h5 { display: inline; }
+.tryit-words { display: flex; flex-wrap: wrap; gap: 4px; }
+.tryit-word { font: 500 12px var(--font-mono); border: 2px solid var(--edge); border-radius: 6px; padding: 1px 6px; background: var(--card-2); }
+.tryit-word b { color: var(--cobalt); }
+.tryit-hits { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; font-size: 13.5px; }
+.tryit-hits li { display: grid; grid-template-columns: 46px minmax(0, 1fr); gap: 8px; align-items: start; }
+.tryit-score {
+  position: relative; height: 20px; border: 2px solid var(--edge); border-radius: 5px; overflow: hidden; background: var(--card-2);
+  font: 600 11px var(--font-mono); display: grid; place-items: center;
+}
+.tryit-score::before { content: ""; position: absolute; inset: 0 auto 0 0; width: calc(var(--score) * 100%); background: var(--mint); opacity: 0.55; }
+.tryit-score b { position: relative; }
+.tryit-prompt { margin: 0; max-height: 220px; overflow: auto; white-space: pre-wrap; font: 500 12px/1.45 var(--font-mono); background: var(--card-2); border: 2px solid var(--dots); border-radius: 8px; padding: 8px; }
+.tryit-answer { border: 2px solid var(--edge); border-radius: 10px; padding: 8px 10px; display: grid; gap: 4px; }
+.tryit-answer p { font-weight: 700; }
+.tryit-answer.answer-grounded { background: var(--done-bg); }
+.tryit-answer.answer-guess { background: #ffe1d8; color: #17183a; }
+.tryit-answer.answer-guess h5 { color: #8a2a10; }
+.tryit-answer.answer-unknown { background: var(--card-2); }
+.tryit-note { font-size: 12.5px; }
+
+/* Phones: the drawing keeps a readable size and scrolls sideways. */
+@media (max-width: 640px) {
+  .scene-sheet { overflow-x: auto; overscroll-behavior-x: contain; }
+  .scene-svg { min-width: 620px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .wire-lit path { animation: none; stroke-dashoffset: 0; }
+  .wire-lit .arrow { animation: none; opacity: 1; }
+  .part .fill, .part-label { transition: none; }
+}
