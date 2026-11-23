@@ -131,6 +131,8 @@ export interface LlmPort {
 
 // ── Local library: data that stays in this browser only ──────────────────────────────────────────────
 export interface LibraryPort {
+  /** Where notes are kept, for the UI: a short badge and a clause like "They're stored only in this browser". */
+  readonly privacy: { readonly badge: string; readonly detail: string };
   /** The player's own notes for "Ask the course" (never uploaded anywhere). */
   loadNotes(): Promise<readonly PersonalNote[]>;
   /** True when stored durably; false when storage is blocked and the note lives only until reload. */

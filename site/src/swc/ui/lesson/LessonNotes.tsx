@@ -1,5 +1,6 @@
 import { MAX_LESSON_NOTE_CHARS, useLessonNote, type LessonNoteStatus } from "../../../rte/useLessonNote";
 import type { RoadmapItem } from "../../logic/roadmap";
+import { useRte } from "../../../rte/RteContext";
 
 const STATUS: Record<LessonNoteStatus, string> = {
   loading: "Loading your note…",
@@ -15,12 +16,13 @@ const PROBLEMS: ReadonlySet<LessonNoteStatus> = new Set(["session", "error", "un
 
 /** The player's private, autosaved note on this lesson. */
 export function LessonNotes({ item, onSaved }: { readonly item: RoadmapItem; readonly onSaved: () => void }) {
+  const { library } = useRte();
   const note = useLessonNote(item, onSaved);
   return (
     <section className="lesson-section" aria-labelledby="lesson-notes-title">
       <div className="lesson-section-head">
         <h3 id="lesson-notes-title">My notes</h3>
-        <span className="admin-tag">Private · this browser only</span>
+        <span className="admin-tag">{library.privacy.badge}</span>
       </div>
       <label className="sr-only" htmlFor="lesson-note">My notes on {item.title}</label>
       <textarea

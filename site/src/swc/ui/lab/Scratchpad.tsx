@@ -20,7 +20,6 @@ const STARTER: readonly string[] = [
   `# A Python scratchpad that runs in your browser, like a mini Jupyter.
 # Variables carry over between cells. Shift + Enter runs a cell.
 import numpy as np
-import type { CellOutput, KernelState } from "../../logic/lab/kernel";
 
 a = np.array([0.2, 0.9, 0.1])
 b = np.array([0.25, 0.8, 0.0])

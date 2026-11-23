@@ -22,6 +22,10 @@ function isNote(value: unknown): value is PersonalNote {
 export function annaLibrary(host: AnnaHost): LibraryPort {
   const vectors = new Map<string, Vec>();
   return {
+    privacy: {
+      badge: "Private · your Anna account",
+      detail: "They're kept in this app's private storage in your Anna account, which no other app can read",
+    },
     async loadNotes() {
       const keys: string[] = [];
       let cursor: string | undefined;

@@ -9,6 +9,9 @@ const EMBED_MAX_CHARS = 32_000;
 /** The Arena's prompts keep answers grounded in the notes, so a low temperature. */
 const TEMPERATURE = 0.2;
 
+/** The Arena shows answers as plain text; Anna's bigger models otherwise like LaTeX and Markdown. */
+const PLAIN_TEXT = "Write plain text: no Markdown and no LaTeX (write formulas like 1/(k + rank)).";
+
 /** Answers written by the model the player picked in Anna, billed to their Anna credits. */
 export function annaLlm(host: AnnaHost): LlmPort {
   let stopCurrent: (() => void) | null = null;
@@ -24,12 +27,12 @@ export function annaLlm(host: AnnaHost): LlmPort {
     },
 
     async generate(messages, maxTokens, cb) {
-      const systemPrompt = messages.filter((m) => m.role === "system").map((m) => m.content).join("\n\n");
+      const systemPrompt = [...messages.filter((m) => m.role === "system").map((m) => m.content), PLAIN_TEXT].join("\n\n");
       const chat: HostMessage[] = messages.filter((m) => m.role !== "system").map((m) => ({ role: m.role, content: m.content }));
       // Anna answers in one piece, so "stop" can only drop the answer that's still on its way.
       const stopped = new Promise<string>((resolve) => { stopCurrent = () => resolve(""); });
       const answer = host.llm
-        .complete({ messages: chat, maxTokens, temperature: TEMPERATURE, ...(systemPrompt ? { systemPrompt } : {}) })
+        .complete({ messages: chat, maxTokens, temperature: TEMPERATURE, systemPrompt })
         .then((res) => res.content.text ?? "", (e: unknown) => { throw hostError(e, "The AI couldn't answer"); });
       try {
         const text = await Promise.race([answer, stopped]);

@@ -18,6 +18,7 @@ function noteTitle(fileName: string): string {
 }
 
 function NotesPanel({ course }: { readonly course: ReturnType<typeof useAskCourse> }) {
+  const { library } = useRte();
   const [title, setTitle] = useState("");
   const [text, setText] = useState("");
   const [message, setMessage] = useState<{ readonly ok: boolean; readonly text: string } | null>(null);
@@ -64,10 +65,10 @@ function NotesPanel({ course }: { readonly course: ReturnType<typeof useAskCours
     <section className="panel ask-notes" aria-labelledby="notes-title">
       <div className="panel-head">
         <h2 id="notes-title" className="panel-title">Your notes</h2>
-        <span className="admin-tag">Private · this browser only</span>
+        <span className="admin-tag">{library.privacy.badge}</span>
       </div>
       <p className="muted small-text">
-        Add your own notes and the assistant searches them too. Export your Notion pages as Markdown and pick the files, or paste text. They're stored only in this browser and never uploaded; removing a note also removes its embeddings.
+        Add your own notes and the assistant searches them too. Export your Notion pages as Markdown and pick the files, or paste text. {library.privacy.detail}; removing a note also removes its embeddings.
       </p>
       <label className="btn btn-ghost btn-small file-pick">
         Add .md / .txt files
@@ -98,7 +99,7 @@ function NotesPanel({ course }: { readonly course: ReturnType<typeof useAskCours
 
 /** "Ask the course": RAG over our lecture notes and your own notes, running entirely in the browser. */
 export function AskCourse() {
-  const { llm } = useRte();
+  const { llm, embedder } = useRte();
   const course = useAskCourse();
   const [question, setQuestion] = useState("");
   const [useAi, setUseAi] = useState(loadAiPref);
@@ -129,7 +130,7 @@ export function AskCourse() {
   return (
     <div className="playground ask">
       <p className="banner info">
-        Ask anything about the RAG course. The answer comes from our notes on each lecture and from your own notes, and the assistant shows exactly how it found them: keyword search, meaning search, reciprocal rank fusion and the prompt. Everything runs in your browser.
+        Ask anything about the RAG course. The answer comes from our notes on each lecture and from your own notes, and the assistant shows exactly how it found them: keyword search, meaning search, reciprocal rank fusion and the prompt. {embedder.info.detail}
       </p>
 
       <section className="panel ask-chat" aria-labelledby="ask-title">

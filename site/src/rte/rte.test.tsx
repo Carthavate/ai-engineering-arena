@@ -105,6 +105,7 @@ describe("useAskCourse through fake models", () => {
         stop: () => undefined,
       },
       library: {
+        privacy: { badge: "Private", detail: "Kept in the test" },
         loadNotes: async () => [],
         saveNote: async () => true,
         deleteNote: async () => undefined,
@@ -175,6 +176,7 @@ describe("useAskCourse controls", () => {
         stop: () => undefined,
       },
       library: {
+        privacy: { badge: "Private", detail: "Kept in the test" },
         loadNotes: async () => [],
         saveNote: async () => false,
         deleteNote: async () => undefined,
@@ -207,6 +209,7 @@ function memoryLibrary(initial: readonly PersonalNote[] = []) {
   const vectors = new Map<string, readonly number[]>();
   const log = { saved: [] as PersonalNote[], deleted: [] as string[], forgotten: [] as string[] };
   const port: LibraryPort = {
+    privacy: { badge: "Private", detail: "Kept in the test" },
     loadNotes: async () => [...notes.values()],
     saveNote: async (n) => { notes.set(n.id, n); log.saved.push(n); return true; },
     deleteNote: async (id) => { notes.delete(id); log.deleted.push(id); },

@@ -40,7 +40,8 @@ describe("annaLlm", () => {
     const text = await llm.generate([{ role: "system", content: "Cite [1]." }, { role: "user", content: "What is RRF?" }], 160, { onText });
     expect(text).toBe("RRF adds 1/(k+rank) [1].");
     expect(onText).toHaveBeenCalledWith("RRF adds 1/(k+rank) [1].");
-    expect(calls[0]).toMatchObject({ systemPrompt: "Cite [1].", maxTokens: 160, messages: [{ role: "user", content: "What is RRF?" }] });
+    expect(calls[0]).toMatchObject({ maxTokens: 160, messages: [{ role: "user", content: "What is RRF?" }] });
+    expect(calls[0].systemPrompt).toMatch(/^Cite \[1\]\.\n\nWrite plain text: no Markdown and no LaTeX/);
   });
 
   it("stop drops an answer that's still on its way", async () => {

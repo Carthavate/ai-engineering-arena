@@ -66,6 +66,7 @@ export function browserLibrary(): LibraryPort {
   };
 
   return {
+    privacy: { badge: "Private · this browser only", detail: "They're stored only in this browser and never uploaded" },
     async loadNotes() {
       const stored = await withDb("loading notes", async (d) => (await request(d.transaction(NOTES).objectStore(NOTES).getAll())) as unknown[]);
       const notes = new Map<string, PersonalNote>((stored ?? []).filter(isNote).map((n) => [n.id, n]));
