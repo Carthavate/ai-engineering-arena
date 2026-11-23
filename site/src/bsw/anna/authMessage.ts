@@ -1,10 +1,14 @@
-// What the sign-in popup sends back to the Arena window. Kept free of Supabase so the popup page stays tiny.
+// What the sign-in popup sends back to the Arena window in Anna. Kept free of Supabase so the popup page stays tiny.
 
-/** BroadcastChannel name; the popup and the app window share Anna's origin. */
-export const AUTH_CHANNEL = "arena-anna-auth";
+/**
+ * Where the Anna app's sign-in popup returns: a page on the website. Anna won't serve an app's own files to a
+ * popup (it redirects them to its login page), so the popup can't come back to anna.partners.
+ */
+export const CALLBACK_URL: string =
+  (import.meta.env.VITE_ANNA_CALLBACK_URL as string | undefined) ?? "https://carthavate.github.io/ai-engineering-arena/anna-callback.html";
 
-/** The page GitHub sign-in returns to, next to the app's index.html in the bundle. */
-export const CALLBACK_PAGE = "auth-callback.html";
+/** The only origin the popup hands its code to. */
+export const ANNA_ORIGIN = "https://anna.partners";
 
 export interface AuthMessage {
   readonly type: "arena-auth";

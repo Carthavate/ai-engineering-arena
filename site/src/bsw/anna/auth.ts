@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { AuthPort } from "../../rte/ports";
 import { supabaseAuth } from "../supabase/auth";
-import { AUTH_CHANNEL, CALLBACK_PAGE, isAuthMessage, type AuthMessage } from "./authMessage";
+import { CALLBACK_URL, isAuthMessage, type AuthMessage } from "./authMessage";
 import type { AnnaHost } from "./host";
 
 /** The refresh token, in the app's private Anna storage, keeps the player signed in between Anna windows. */
@@ -10,25 +10,24 @@ export const SESSION_KEY = "auth/refresh-token";
 const POPUP_FEATURES = "popup,width=520,height=720";
 const SIGN_IN_TIMEOUT_MS = 5 * 60_000;
 /** The popup posts its message and closes itself: give the message a moment to arrive before calling it abandoned. */
-const CLOSED_GRACE_MS = 1500;
+const CLOSED_GRACE_MS = 3000;
 
-/** Waits for the popup's message, on the shared channel or from window.opener. */
+/** Waits for the message the website's callback page posts back through window.opener. */
 function waitForCallback(popup: Window): Promise<AuthMessage> {
+  const callbackOrigin = new URL(CALLBACK_URL).origin;
   return new Promise((resolve, reject) => {
-    const channel = new BroadcastChannel(AUTH_CHANNEL);
     let closedTimer: ReturnType<typeof setTimeout> | undefined;
     const finish = (settle: () => void) => {
-      channel.close();
-      window.removeEventListener("message", onWindowMessage);
+      window.removeEventListener("message", onMessage);
       clearInterval(poll);
       clearTimeout(timeout);
       clearTimeout(closedTimer);
       settle();
     };
-    const accept = (data: unknown) => { if (isAuthMessage(data)) finish(() => resolve(data)); };
-    const onWindowMessage = (e: MessageEvent) => { if (e.origin === window.location.origin) accept(e.data); };
-    channel.onmessage = (e) => accept(e.data);
-    window.addEventListener("message", onWindowMessage);
+    const onMessage = (e: MessageEvent) => {
+      if (e.origin === callbackOrigin && isAuthMessage(e.data)) finish(() => resolve(e.data));
+    };
+    window.addEventListener("message", onMessage);
     const poll = setInterval(() => {
       if (popup.closed && closedTimer === undefined) {
         closedTimer = setTimeout(() => finish(() => reject(new Error("The sign-in window was closed before you finished."))), CLOSED_GRACE_MS);
@@ -38,13 +37,30 @@ function waitForCallback(popup: Window): Promise<AuthMessage> {
   });
 }
 
-/** GitHub sign-in in a popup: Anna's page can't be redirected away, so the popup carries the OAuth round trip. */
-export async function signInWithPopup(client: SupabaseClient): Promise<void> {
-  const redirectTo = new URL(CALLBACK_PAGE, document.baseURI).href;
-  const { data, error } = await client.auth.signInWithOAuth({ provider: "github", options: { redirectTo, skipBrowserRedirect: true } });
-  if (error || !data.url) throw new Error("GitHub sign-in couldn't start.");
-  const popup = window.open(data.url, "arena-sign-in", POPUP_FEATURES);
+/**
+ * Open the sign-in popup right away, inside the click, so the browser doesn't block it; it gets its address once
+ * Supabase has made the PKCE challenge.
+ */
+export function openSignInPopup(): Window {
+  const popup = window.open("about:blank", "arena-sign-in", POPUP_FEATURES);
   if (!popup) throw new Error("Your browser blocked the sign-in window. Allow popups for anna.partners and try again.");
+  return popup;
+}
+
+/**
+ * GitHub sign-in in a popup: Anna's page can't be redirected away, and it won't serve the app's files to a popup,
+ * so the popup returns to a page on the website that posts the one-time code back here.
+ */
+export async function signInWithPopup(client: SupabaseClient, popup: Window): Promise<void> {
+  const { data, error } = await client.auth.signInWithOAuth({
+    provider: "github",
+    options: { redirectTo: CALLBACK_URL, skipBrowserRedirect: true },
+  });
+  if (error || !data.url) {
+    popup.close();
+    throw new Error("GitHub sign-in couldn't start.");
+  }
+  popup.location.href = data.url;
   const result = await waitForCallback(popup);
   if (!result.code) throw new Error(`GitHub sign-in failed: ${result.error}`);
   const { error: exchangeError } = await client.auth.exchangeCodeForSession(result.code);
@@ -79,7 +95,8 @@ export function annaAuth(client: SupabaseClient): AuthPort {
     ...supabaseAuth(client),
     async signIn() {
       try {
-        await signInWithPopup(client);
+        // No await before this: the popup must open inside the click.
+        await signInWithPopup(client, openSignInPopup());
       } catch (e) {
         console.error(e);
         window.alert(e instanceof Error ? e.message : "GitHub sign-in failed.");

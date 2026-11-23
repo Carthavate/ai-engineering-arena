@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { keepSession, restoreSession, SESSION_KEY, signInWithPopup } from "./auth";
+import { keepSession, openSignInPopup, restoreSession, SESSION_KEY, signInWithPopup } from "./auth";
 import type { AnnaHost } from "./host";
 
 afterEach(() => {
@@ -74,40 +74,48 @@ describe("keepSession", () => {
 });
 
 describe("signInWithPopup", () => {
-  it("opens GitHub sign-in in a popup and exchanges the code it sends back", async () => {
+  const CALLBACK_ORIGIN = "https://carthavate.github.io";
+
+  it("sends the popup to GitHub sign-in and exchanges the code the website posts back", async () => {
     const { client, auth } = fakeClient();
-    const popup = { closed: false } as Window;
-    const open = vi.spyOn(window, "open").mockReturnValue(popup);
-    const done = signInWithPopup(client);
-    await vi.waitFor(() => expect(open).toHaveBeenCalled());
-    window.dispatchEvent(new MessageEvent("message", { data: { type: "arena-auth", code: "one-time" }, origin: window.location.origin }));
+    const popup = { closed: false, location: { href: "about:blank" }, close: vi.fn() } as unknown as Window;
+    const done = signInWithPopup(client, popup);
+    await vi.waitFor(() => expect(popup.location.href).toBe("https://supabase.example/authorize?provider=github"));
+    window.dispatchEvent(new MessageEvent("message", { data: { type: "arena-auth", code: "one-time" }, origin: CALLBACK_ORIGIN }));
     await done;
     expect(auth.signInWithOAuth).toHaveBeenCalledWith({
       provider: "github",
-      options: { redirectTo: new URL("auth-callback.html", document.baseURI).href, skipBrowserRedirect: true },
+      options: { redirectTo: "https://carthavate.github.io/ai-engineering-arena/anna-callback.html", skipBrowserRedirect: true },
     });
-    expect(open.mock.calls[0][0]).toBe("https://supabase.example/authorize?provider=github");
     expect(auth.exchangeCodeForSession).toHaveBeenCalledWith("one-time");
   });
 
-  it("ignores messages from other origins and fails when the popup is closed", async () => {
+  it("ignores codes from any other origin and fails when the popup is closed", async () => {
     vi.useFakeTimers();
     const { client, auth } = fakeClient();
-    const popup = { closed: false } as { closed: boolean };
-    vi.spyOn(window, "open").mockReturnValue(popup as Window);
-    const done = signInWithPopup(client);
+    const popup = { closed: false, location: { href: "about:blank" }, close: vi.fn() } as unknown as Window & { closed: boolean };
+    const done = signInWithPopup(client, popup);
     const outcome = expect(done).rejects.toThrow(/closed before you finished/);
     await vi.advanceTimersByTimeAsync(0);
+    window.dispatchEvent(new MessageEvent("message", { data: { type: "arena-auth", code: "stolen" }, origin: "https://anna.partners" }));
     window.dispatchEvent(new MessageEvent("message", { data: { type: "arena-auth", code: "stolen" }, origin: "https://evil.example" }));
     popup.closed = true;
-    await vi.advanceTimersByTimeAsync(2500);
+    await vi.advanceTimersByTimeAsync(4000);
     await outcome;
     expect(auth.exchangeCodeForSession).not.toHaveBeenCalled();
   });
+});
 
-  it("explains a blocked popup", async () => {
-    const { client } = fakeClient();
+describe("openSignInPopup", () => {
+  it("opens a blank popup at once, inside the click", () => {
+    const popup = {} as Window;
+    const open = vi.spyOn(window, "open").mockReturnValue(popup);
+    expect(openSignInPopup()).toBe(popup);
+    expect(open).toHaveBeenCalledWith("about:blank", "arena-sign-in", "popup,width=520,height=720");
+  });
+
+  it("explains a blocked popup", () => {
     vi.spyOn(window, "open").mockReturnValue(null);
-    await expect(signInWithPopup(client)).rejects.toThrow(/blocked the sign-in window/);
+    expect(() => openSignInPopup()).toThrow(/blocked the sign-in window/);
   });
 });

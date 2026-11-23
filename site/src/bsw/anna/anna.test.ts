@@ -124,7 +124,7 @@ describe("annaLibrary", () => {
 });
 
 describe("the sign-in callback message", () => {
-  const base = "https://anna.partners/anna-apps/carthavate/ai-engineering-arena/0.1.0/auth-callback.html";
+  const base = "https://carthavate.github.io/ai-engineering-arena/anna-callback.html";
 
   it("carries the one-time code", () => {
     expect(callbackMessage(`${base}?code=abc123`)).toEqual({ type: "arena-auth", code: "abc123" });
