@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useAskCourse, type AddNotesResult } from "../../../rte/useAskCourse";
 import { loadAiPref, reducedMotion, saveAiPref, Turn } from "./AskTurn";
+import { useRte } from "../../../rte/RteContext";
+import { deviceLabel } from "../../logic/lab/llm";
 
 const MAX_FILE_BYTES = 2_000_000;
 const SUGGESTIONS = [
@@ -96,6 +98,7 @@ function NotesPanel({ course }: { readonly course: ReturnType<typeof useAskCours
 
 /** "Ask the course": RAG over our lecture notes and your own notes, running entirely in the browser. */
 export function AskCourse() {
+  const { llm } = useRte();
   const course = useAskCourse();
   const [question, setQuestion] = useState("");
   const [useAi, setUseAi] = useState(loadAiPref);
@@ -158,10 +161,10 @@ export function AskCourse() {
         <div className="ask-options">
           <label className="tok-toggle">
             <input type="checkbox" checked={useAi} onChange={(e) => toggleAi(e.target.checked)} />
-            Write answers with the local AI (Qwen2.5, about 800 MB the first time)
+            Write answers with {llm.info.label}
           </label>
           {ai.state === "loading" && <span className="muted small-text">Loading the AI{ai.pct !== null ? `… ${ai.pct}%` : "…"}</span>}
-          {ai.state === "ready" && <span className="muted small-text">AI running on {ai.device === "webgpu" ? "your GPU" : "your CPU (slower)"}</span>}
+          {ai.state === "ready" && <span className="muted small-text">AI running on {ai.device && deviceLabel(ai.device)}</span>}
           {ai.state === "error" && <span className="form-error small-text">The AI couldn't start here; you still get the best passages.</span>}
           {turns.length > 0 && <button type="button" className="btn-link" onClick={course.clear} disabled={busy}>Clear chat</button>}
         </div>

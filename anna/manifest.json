@@ -1,0 +1,44 @@
+{
+  "schema": 3,
+  "required_executas": [],
+  "optional_executas": [],
+  "system_prompt_addendum": "The user has the AI Engineering Arena app open: a gamified course for learning AI engineering with friends (a 17-lesson RAG course, quizzes, live quiz duels, a Python lab, XP, badges and a leaderboard shared with the website). Its 'Ask the course' tutor answers questions about retrieval-augmented generation from the course notes and cites them. If the user asks about the course, suggest asking the tutor in the app or opening a lesson.",
+  "tags": ["education", "rag", "ai-engineering", "quiz", "python", "course"],
+  "ui": {
+    "bundle": {
+      "format": "static-spa",
+      "entry": "index.html",
+      "external_origins": [
+        "https://tfzsszfsiuqufttbtora.supabase.co",
+        "https://avatars.githubusercontent.com",
+        "https://i.ytimg.com",
+        "https://cdn.jsdelivr.net",
+        "https://huggingface.co",
+        "https://cdn-lfs.hf.co",
+        "https://us.aws.cdn.hf.co",
+        "https://cas-bridge.xethub.hf.co"
+      ]
+    },
+    "views": [
+      {
+        "name": "main",
+        "title": "AI Engineering Arena",
+        "default": true,
+        "entry": "index.html",
+        "min_size": { "w": 420, "h": 560 },
+        "default_size": { "w": 1100, "h": 820 },
+        "resizable": true,
+        "movable": true,
+        "single_instance": true
+      }
+    ],
+    "host_api": {},
+    "browser_permissions": ["web-share"],
+    "csp_overrides": {
+      "connect-src": ["wss://tfzsszfsiuqufttbtora.supabase.co"],
+      "script-src": ["'wasm-unsafe-eval'"],
+      "frame-src": ["https://www.youtube-nocookie.com"]
+    },
+    "state_merge": "last_writer_wins"
+  }
+}

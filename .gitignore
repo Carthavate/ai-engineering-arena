@@ -2,6 +2,8 @@
 .env
 .env.*
 !.env.example
+# Build settings for the Anna app (no secrets).
+!.env.anna
 
 # Python
 __pycache__/
@@ -47,3 +49,7 @@ rag-for-beginners/
 
 # Editor settings stay personal
 .vscode/
+
+# Anna app: the built bundle and the anna-app CLI's local state
+anna/bundle/
+anna/.anna/

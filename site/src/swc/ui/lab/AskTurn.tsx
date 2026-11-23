@@ -4,7 +4,7 @@ import type { Chunk } from "../../logic/ask/documents";
 
 const AI_KEY = "ai-eng-lab:ask-ai";
 
-/** Whether the player chose to have the local AI write answers (shared by every Ask box). */
+/** Whether the player chose to have the AI write answers (shared by every Ask box). */
 export function loadAiPref(): boolean {
   try {
     return localStorage.getItem(AI_KEY) === "1";
@@ -121,7 +121,7 @@ export function Turn({ turn, idPrefix = "src" }: { readonly turn: AskTurn; reado
         <p className="bubble bot">Nothing in the course notes or your notes matches that. Try other words, or ask about a RAG topic.</p>
       )}
       {turn.status === "done" && !turn.answer && turn.sources.length > 0 && (
-        <p className="bubble bot">{turn.usedAi ? "The AI didn't write an answer this time; here are the most relevant passages." : "Here are the most relevant passages. Turn on the local AI to get a written answer."}</p>
+        <p className="bubble bot">{turn.usedAi ? "The AI didn't write an answer this time; here are the most relevant passages." : "Here are the most relevant passages. Turn on the AI to get a written answer."}</p>
       )}
       {turn.sources.length > 0 && (
         <ol className="source-cards">

@@ -8,7 +8,7 @@ import type { Duel, DuelEntry } from "../swc/logic/duels";
 import type { ProgressRow } from "../swc/logic/progress";
 import type { ChallengeTest, RunResult, RunnerState } from "../swc/logic/lab/challenges";
 import type { CellOutput, KernelState } from "../swc/logic/lab/kernel";
-import type { ChatMessage, LlmCallbacks, LlmDevice } from "../swc/logic/lab/llm";
+import type { ChatMessage, LlmCallbacks, LlmDevice, ModelInfo } from "../swc/logic/lab/llm";
 import type { Tokenized } from "../swc/logic/lab/tokenizer";
 import type { Vec } from "../swc/logic/lab/vectors";
 import type { PersonalNote } from "../swc/logic/ask/documents";
@@ -114,6 +114,7 @@ export interface KernelPort {
 }
 
 export interface EmbedPort {
+  readonly info: ModelInfo;
   embed(texts: readonly string[], onProgress: (pct: number) => void): Promise<Vec[]>;
 }
 
@@ -122,6 +123,7 @@ export interface TokenizerPort {
 }
 
 export interface LlmPort {
+  readonly info: ModelInfo;
   load(cb?: LlmCallbacks): Promise<LlmDevice>;
   generate(messages: readonly ChatMessage[], maxTokens: number, cb?: LlmCallbacks): Promise<string>;
   stop(): void;

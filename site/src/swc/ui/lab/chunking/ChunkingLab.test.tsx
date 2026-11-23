@@ -10,6 +10,7 @@ afterEach(cleanup);
 /** One topic per paragraph of the sample; a sentence without a topic word stays on the previous topic. */
 const TOPICS: readonly RegExp[] = [/return|refund/i, /warranty/i, /E2|battery|charge/i, /deliver|assembled/i];
 const fakeEmbedder = {
+  info: { label: "a test embedder", detail: "Runs a test embedder." },
   embed: async (texts: readonly string[]) => {
     let topic = 0;
     return texts.map((t) => {

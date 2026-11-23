@@ -9,6 +9,7 @@ import { FusionPanel } from "./FusionPanel";
 import { useVectorSearch, type VectorSearch } from "./useVectorSearch";
 import "../blueprint.css";
 import "./hybrid.css";
+import { useRte } from "../../../../rte/RteContext";
 
 const MAX_QUERY_CHARS = 200;
 /** Equal weights, as LangChain's EnsembleRetriever uses by default. */
@@ -17,6 +18,7 @@ const INDEX = bm25Index(HYBRID_DOCS);
 
 /** What the vector column shows until its ranking is ready. */
 function VectorStatusNote({ search }: { readonly search: VectorSearch }) {
+  const { embedder } = useRte();
   if (search.status === "embedding") return <p className="hy-empty">Embedding the query…</p>;
   if (search.status === "failed") {
     return (
@@ -29,7 +31,7 @@ function VectorStatusNote({ search }: { readonly search: VectorSearch }) {
   return (
     <div className="hy-embed">
       <button type="button" className="btn btn-primary btn-small" onClick={search.embedDocuments} disabled={search.load.busy}>Embed the documents</button>
-      <span className="hy-dim">Runs a real embedding model in your browser (about 23 MB, downloaded once).</span>
+      <span className="hy-dim">{embedder.info.detail}</span>
       <LoadNote load={search.load} />
     </div>
   );

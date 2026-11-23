@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { CHALLENGES } from "./challenges";
-import { ragMessages } from "./llm";
+import { deviceLabel, ragMessages } from "./llm";
 import { charsPerToken, showWhitespace, TOKENIZERS } from "./tokenizer";
 
 describe("ragMessages", () => {
@@ -45,5 +45,13 @@ describe("race challenges", () => {
         .flatMap((m) => [...m[1].matchAll(/'([a-z0-9-]+)'/g)].map((x) => x[1])),
     );
     expect(CHALLENGES.map((c) => c.id).filter((id) => !listed.has(id))).toEqual([]);
+  });
+});
+
+describe("deviceLabel", () => {
+  it("names where the model runs", () => {
+    expect(deviceLabel("webgpu")).toBe("your GPU");
+    expect(deviceLabel("wasm")).toBe("your CPU (slower)");
+    expect(deviceLabel("host")).toBe("Anna's model");
   });
 });

@@ -16,6 +16,8 @@ import { findRoadmapItem } from "../swc/logic/activity";
 import type { PersonalNote } from "../swc/logic/ask/documents";
 import type { LibraryPort } from "./ports";
 
+const MODEL = { label: "the test model", detail: "A fake model." };
+
 /** A fake Rte: only the ports a test touches need real behavior. */
 function fakeRte(overrides: Partial<Rte>): Rte {
   const unused = new Proxy({}, { get: () => () => { throw new Error("port not faked in this test"); } });
@@ -84,12 +86,14 @@ describe("useAskCourse through fake models", () => {
     const store = new Map<string, readonly number[]>();
     return fakeRte({
       embedder: {
+        info: MODEL,
         embed: async (texts) => {
           calls.embedded += texts.length;
           return texts.map(toyEmbed);
         },
       },
       llm: {
+        info: MODEL,
         load: async () => "wasm",
         generate: async (messages, _max, cb) => {
           const last = messages.at(-1)!.content;
@@ -163,8 +167,9 @@ describe("useAskCourse controls", () => {
     const gate = new Promise<void>((r) => { release = r; });
     let generated = 0;
     const rte = fakeRte({
-      embedder: { embed: async (texts) => texts.map(toy) },
+      embedder: { info: MODEL, embed: async (texts) => texts.map(toy) },
       llm: {
+        info: MODEL,
         load: async () => { await gate; return "wasm"; },
         generate: async () => { generated += 1; return "x"; },
         stop: () => undefined,
@@ -221,8 +226,8 @@ describe("useAskCourse scoped to one lesson", () => {
   function setup() {
     const lib = memoryLibrary([lessonNote, otherNote]);
     const rte = fakeRte({
-      embedder: { embed: async (texts) => texts.map(toy) },
-      llm: { load: async () => "wasm", generate: async () => "Tables are kept as HTML [1].", stop: () => undefined },
+      embedder: { info: MODEL, embed: async (texts) => texts.map(toy) },
+      llm: { info: MODEL, load: async () => "wasm", generate: async () => "Tables are kept as HTML [1].", stop: () => undefined },
       library: lib.port,
     });
     return renderHook(() => useAskCourse(), { wrapper: wrapper(rte) });
