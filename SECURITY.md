@@ -28,5 +28,6 @@ See [docs/database.md](docs/database.md#6-security-model) for the full model.
 
 - Coding challenges are graded in the browser (Pyodide), so a reported solve is trusted.
 - After submitting a quiz you see the answer key, so retaking can reveal the bank's answers.
+- The Anna app (ADR-0012) runs on anna.partners, an origin every Anna app shares. Another Anna app the player installs could read the Arena window's memory, including its session. The sign-in popup asks for a click before handing over its code, so a sign-in started by another app can't finish silently.
 
 Both are fine for a learning game among friends, and are documented in [ADR-0003](docs/adr/0003-server-authoritative-rules.md).

@@ -81,7 +81,9 @@ describe("signInWithPopup", () => {
     const popup = { closed: false, location: { href: "about:blank" }, close: vi.fn() } as unknown as Window;
     const done = signInWithPopup(client, popup);
     await vi.waitFor(() => expect(popup.location.href).toBe("https://supabase.example/authorize?provider=github"));
-    window.dispatchEvent(new MessageEvent("message", { data: { type: "arena-auth", code: "one-time" }, origin: CALLBACK_ORIGIN }));
+    // A message from another window on the website's origin is ignored; the popup's own is accepted.
+    window.dispatchEvent(new MessageEvent("message", { data: { type: "arena-auth", code: "other" }, origin: CALLBACK_ORIGIN, source: window }));
+    window.dispatchEvent(new MessageEvent("message", { data: { type: "arena-auth", code: "one-time" }, origin: CALLBACK_ORIGIN, source: popup as unknown as MessageEventSource }));
     await done;
     expect(auth.signInWithOAuth).toHaveBeenCalledWith({
       provider: "github",

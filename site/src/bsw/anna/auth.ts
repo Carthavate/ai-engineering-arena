@@ -25,7 +25,8 @@ function waitForCallback(popup: Window): Promise<AuthMessage> {
       settle();
     };
     const onMessage = (e: MessageEvent) => {
-      if (e.origin === callbackOrigin && isAuthMessage(e.data)) finish(() => resolve(e.data));
+      // Only the popup this window opened, on the website's origin.
+      if (e.source === popup && e.origin === callbackOrigin && isAuthMessage(e.data)) finish(() => resolve(e.data));
     };
     window.addEventListener("message", onMessage);
     const poll = setInterval(() => {
