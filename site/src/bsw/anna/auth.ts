@@ -3,6 +3,7 @@ import type { AuthPort } from "../../rte/ports";
 import { supabaseAuth } from "../supabase/auth";
 import { CALLBACK_URL, isAuthMessage, type AuthMessage } from "./authMessage";
 import type { AnnaHost } from "./host";
+import type { SignInProvider } from "../../swc/logic/types";
 
 /** The refresh token, in the app's private Anna storage, keeps the player signed in between Anna windows. */
 export const SESSION_KEY = "auth/refresh-token";
@@ -49,23 +50,23 @@ export function openSignInPopup(): Window {
 }
 
 /**
- * GitHub sign-in in a popup: Anna's page can't be redirected away, and it won't serve the app's files to a popup,
- * so the popup returns to a page on the website that posts the one-time code back here.
+ * GitHub or Google sign-in in a popup: Anna's page can't be redirected away, and it won't serve the app's files to
+ * a popup, so the popup returns to a page on the website that posts the one-time code back here.
  */
-export async function signInWithPopup(client: SupabaseClient, popup: Window): Promise<void> {
+export async function signInWithPopup(client: SupabaseClient, popup: Window, provider: SignInProvider): Promise<void> {
   const { data, error } = await client.auth.signInWithOAuth({
-    provider: "github",
+    provider,
     options: { redirectTo: CALLBACK_URL, skipBrowserRedirect: true },
   });
   if (error || !data.url) {
     popup.close();
-    throw new Error("GitHub sign-in couldn't start.");
+    throw new Error("Sign-in couldn't start.");
   }
   popup.location.href = data.url;
   const result = await waitForCallback(popup);
-  if (!result.code) throw new Error(`GitHub sign-in failed: ${result.error}`);
+  if (!result.code) throw new Error(`Sign-in failed: ${result.error}`);
   const { error: exchangeError } = await client.auth.exchangeCodeForSession(result.code);
-  if (exchangeError) throw new Error("GitHub sign-in failed: the sign-in code was refused.");
+  if (exchangeError) throw new Error("Sign-in failed: the sign-in code was refused.");
 }
 
 /** Sign back in with the refresh token saved by an earlier window, if there is one that still works. */
@@ -94,13 +95,13 @@ export function keepSession(client: SupabaseClient, host: AnnaHost): () => void 
 export function annaAuth(client: SupabaseClient): AuthPort {
   return {
     ...supabaseAuth(client),
-    async signIn() {
+    async signIn(provider) {
       try {
         // No await before this: the popup must open inside the click.
-        await signInWithPopup(client, openSignInPopup());
+        await signInWithPopup(client, openSignInPopup(), provider);
       } catch (e) {
         console.error(e);
-        window.alert(e instanceof Error ? e.message : "GitHub sign-in failed.");
+        window.alert(e instanceof Error ? e.message : "Sign-in failed.");
       }
     },
   };

@@ -65,7 +65,7 @@ export function DashboardPage({ data }: { readonly data: LabData }) {
         {loading ? (
           <p className="muted">Loading players…</p>
         ) : members.length === 0 ? (
-          <p className="empty">No players yet. Sign in with GitHub to join the board.</p>
+          <p className="empty">No players yet. Sign in with GitHub or Google to join the board.</p>
         ) : (
           <div className="podium">
             {ranked.map((s, i) => {

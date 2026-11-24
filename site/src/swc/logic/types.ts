@@ -11,9 +11,12 @@ export function fail<T = never>(error: string): Outcome<T> {
   return { ok: false, error };
 }
 
-/** A signed-in GitHub user. Members (players) are visible to everyone; others only to themselves. */
+/** A signed-in user (GitHub or Google). Members (players) are visible to everyone; others only to themselves. */
 export interface Profile {
   readonly id: string;
+  /** The player name, unique ignoring case: shown everywhere and used in links. "" until they pick one. */
+  readonly handle: string;
+  /** "" unless they signed in with GitHub. */
   readonly github_username: string;
   readonly display_name: string | null;
   readonly avatar_url: string | null;
@@ -26,6 +29,9 @@ export interface Profile {
 export interface AuthSession {
   readonly userId: string;
 }
+
+/** The accounts players can sign in with (ADR-0013). */
+export type SignInProvider = "github" | "google";
 
 export interface ChallengeSolve {
   readonly user_id: string;
@@ -76,14 +82,20 @@ export interface RaceSubmitted {
 
 // ── Players (admin) ──────────────────────────────────────────────────────────────────────────────────
 export interface WaitingPlayer {
+  readonly handle: string;
+  /** "" unless they signed in with GitHub. */
   readonly github_username: string;
+  /** "github", "google", … */
+  readonly provider: string;
+  /** GitHub's public name, or the Google account's name (admins only: it isn't on the public profile). */
+  readonly account_name: string | null;
   readonly display_name: string | null;
   readonly avatar_url: string | null;
   readonly signed_in_at: string;
 }
 
 export interface PlayersOverview {
-  /** Signed in with GitHub but not a player yet. */
+  /** Signed in and picked a player name, but not a player yet. */
   readonly waiting: readonly WaitingPlayer[];
   /** Signed in but turned down (they can still be let in later). */
   readonly declined: readonly WaitingPlayer[];

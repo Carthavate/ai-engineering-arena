@@ -59,7 +59,7 @@ export function TopBar({ page, auth, enabled, myStats, myColor, invites, onBell 
               </button>
             )}
             {profile && myStats && (
-              <a className="me-chip" href={href({ page: "player", player: profile.github_username })} title={`Your profile · ${myStats.level.title} · ${myStats.xp} XP`}>
+              <a className="me-chip" href={href({ page: "player", player: profile.handle })} title={`Your profile · ${myStats.level.title} · ${myStats.xp} XP`}>
                 <Avatar member={profile} size={30} color={myColor} />
                 <span className="me-level">Lv {myStats.level.level}</span>
               </a>
@@ -67,7 +67,11 @@ export function TopBar({ page, auth, enabled, myStats, myColor, invites, onBell 
             <button type="button" className="btn btn-ghost" onClick={signOut}>Sign out</button>
           </>
         ) : (
-          <button type="button" className="btn btn-primary" onClick={signIn}>Sign in with GitHub</button>
+          <div className="signin" role="group" aria-label="Sign in">
+            <span className="signin-label">Sign in with</span>
+            <button type="button" className="btn btn-primary" onClick={() => void signIn("github")} aria-label="Sign in with GitHub">GitHub</button>
+            <button type="button" className="btn" onClick={() => void signIn("google")} aria-label="Sign in with Google">Google</button>
+          </div>
         )}
       </div>
     </header>

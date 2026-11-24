@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { readAuthError } from "../swc/logic/authError";
-import type { AuthSession, Profile } from "../swc/logic/types";
+import type { AuthSession, Outcome, Profile, SignInProvider } from "../swc/logic/types";
 import { useRte } from "./RteContext";
 
 export interface AuthState {
@@ -9,8 +9,10 @@ export interface AuthState {
   readonly profile: Profile | null;
   readonly loading: boolean;
   readonly error: string | null;
-  readonly signIn: () => Promise<void>;
+  readonly signIn: (provider: SignInProvider) => Promise<void>;
   readonly signOut: () => Promise<void>;
+  /** Pick the player name (profile.handle is "" until then); the profile reloads on success. */
+  readonly claimHandle: (name: string) => Promise<Outcome<string>>;
 }
 
 export function useAuth(): AuthState {
@@ -62,5 +64,11 @@ export function useAuth(): AuthState {
     };
   }, [auth, userId, isMember]);
 
-  return { session, profile, loading, error, signIn: auth.signIn, signOut: auth.signOut };
+  const claimHandle = useCallback(async (name: string) => {
+    const res = await auth.claimHandle(name);
+    if (res.ok && userId) setProfile(await auth.loadProfile(userId));
+    return res;
+  }, [auth, userId]);
+
+  return { session, profile, loading, error, signIn: auth.signIn, signOut: auth.signOut, claimHandle };
 }

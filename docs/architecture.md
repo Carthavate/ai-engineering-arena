@@ -1,6 +1,6 @@
 # Software architecture
 
-AI Engineering Arena is a single-page web app (React + TypeScript, served by GitHub Pages) on top of a Supabase backend (Postgres with row-level security, realtime and GitHub sign-in). Python and AI models run **in the browser**, in Web Workers. Nothing costs money to run.
+AI Engineering Arena is a single-page web app (React + TypeScript, served by GitHub Pages) on top of a Supabase backend (Postgres with row-level security, realtime and GitHub or Google sign-in). Python and AI models run **in the browser**, in Web Workers. Nothing costs money to run.
 
 The frontend follows an **AUTOSAR-style layered architecture**:
 - **Application software components (SWC)** never talk to infrastructure directly.
@@ -23,11 +23,11 @@ The same idea is applied to the database ([database.md](database.md)).
 
 ```mermaid
 flowchart LR
-  player([Player<br/>GitHub account])
+  player([Player<br/>GitHub or Google account])
   admin([Admin<br/>TWadi, Ghassen])
   visitor([Visitor])
   arena[AI Engineering Arena<br/>web app]
-  github[(GitHub<br/>OAuth sign-in)]
+  github[(GitHub / Google<br/>OAuth sign-in)]
   hf[(Hugging Face<br/>model files)]
   cdn[(jsDelivr<br/>Pyodide)]
 

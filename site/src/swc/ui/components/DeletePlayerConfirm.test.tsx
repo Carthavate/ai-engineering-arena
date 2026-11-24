@@ -10,7 +10,7 @@ const props = { busy: false, pending: false, error: null, onConfirm: () => undef
 describe("DeletePlayerConfirm", () => {
   it("deletes only once the admin types the username (any case, extra spaces ok)", () => {
     const onConfirm = vi.fn();
-    render(<DeletePlayerConfirm {...props} github="old-friend" onConfirm={onConfirm} />);
+    render(<DeletePlayerConfirm {...props} name="old-friend" onConfirm={onConfirm} />);
     const button = screen.getByRole("button", { name: "Delete forever" });
     const input = screen.getByLabelText(/to confirm/);
     expect(button).toHaveProperty("disabled", true);
@@ -29,12 +29,12 @@ describe("DeletePlayerConfirm", () => {
   it("cancels with the button or Escape, and can't be sent while an action runs", () => {
     const onConfirm = vi.fn();
     const onCancel = vi.fn();
-    const { rerender } = render(<DeletePlayerConfirm {...props} github="test-player" onConfirm={onConfirm} onCancel={onCancel} />);
+    const { rerender } = render(<DeletePlayerConfirm {...props} name="test-player" onConfirm={onConfirm} onCancel={onCancel} />);
     fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
     fireEvent.keyDown(screen.getByLabelText(/to confirm/), { key: "Escape" });
     expect(onCancel).toHaveBeenCalledTimes(2);
 
-    rerender(<DeletePlayerConfirm {...props} github="test-player" busy pending onConfirm={onConfirm} onCancel={onCancel} />);
+    rerender(<DeletePlayerConfirm {...props} name="test-player" busy pending onConfirm={onConfirm} onCancel={onCancel} />);
     fireEvent.change(screen.getByLabelText(/to confirm/), { target: { value: "test-player" } });
     const button = screen.getByRole("button", { name: "Deleting…" });
     expect(button).toHaveProperty("disabled", true);
@@ -43,12 +43,12 @@ describe("DeletePlayerConfirm", () => {
   });
 
   it("shows why the last try failed", () => {
-    render(<DeletePlayerConfirm {...props} github="test-player" error="Admins can't be deleted" />);
+    render(<DeletePlayerConfirm {...props} name="test-player" error="Admins can't be deleted" />);
     expect(screen.getByRole("alert").textContent).toBe("Admins can't be deleted");
   });
 
   it("never unlocks for a profile without a username", () => {
-    render(<DeletePlayerConfirm {...props} github="" />);
+    render(<DeletePlayerConfirm {...props} name="" />);
     expect(screen.getByRole("button", { name: "Delete forever" })).toHaveProperty("disabled", true);
   });
 });

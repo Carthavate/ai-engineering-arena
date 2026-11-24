@@ -14,3 +14,4 @@
 | 0010 | [Ask the course is RAG in the browser over our own notes](0010-ask-the-course-browser-rag.md) | 2026-10-14 |
 | 0011 | [Deleting a player erases everything, on both sides of their duels](0011-deleting-a-player-erases-everything.md) | 2026-10-15 |
 | 0012 | [The Arena is also an Anna app, built from the same code](0012-the-arena-as-an-anna-app.md) | 2026-11-23 |
+| 0013 | [Players can sign in with Google too, and everyone has a player name](0013-google-sign-in-and-player-names.md) | 2026-11-24 |

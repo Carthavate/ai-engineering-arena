@@ -16,6 +16,7 @@ import { ProfilePage } from "../swc/ui/pages/ProfilePage";
 import { DuelCenter } from "../swc/ui/components/DuelCenter";
 import { inviteExpired } from "../swc/logic/duels";
 import { TopBar } from "../swc/ui/components/TopBar";
+import { PlayerNameForm } from "../swc/ui/components/PlayerNameForm";
 import { ActivityPage } from "../swc/ui/pages/ActivityPage";
 import { DashboardPage } from "../swc/ui/pages/DashboardPage";
 import { RoadmapPage } from "../swc/ui/pages/RoadmapPage";
@@ -145,7 +146,9 @@ export function App() {
     onSolved: me?.is_member ? onSolved : null,
     onRace: me?.is_member ? duels.createRace : null,
   };
-  const signedInNonMember = Boolean(auth.session) && !auth.loading && !me?.is_member;
+  // Signed in without a player name yet (a Google account, or a GitHub username someone here already has).
+  const needsName = Boolean(auth.session) && !auth.loading && me?.handle === "";
+  const signedInNonMember = Boolean(auth.session) && !auth.loading && !me?.is_member && !needsName;
 
   return (
     <div className="app">
@@ -157,6 +160,7 @@ export function App() {
 
       <main className="wrap" id="main">
         {!configured && <p className="banner">Progress tracking isn't connected. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY (see site/README.md).</p>}
+        {needsName && me && <PlayerNameForm takenGithub={me.github_username} claim={auth.claimHandle} />}
         {signedInNonMember && (
           <p className="banner">
             You're signed in. To play (tick quests, take quizzes, duel), ask TWadi or Ghassen to let you in. This page unlocks by itself once you're in. Until then you can watch the board.

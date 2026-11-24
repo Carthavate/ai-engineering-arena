@@ -51,6 +51,7 @@ erDiagram
 
   PROFILES {
     uuid id PK "= auth.users.id"
+    text handle "player name, unique (case-insensitive), empty until picked"
     text github_username "unique (case-insensitive), empty unless GitHub sign-in"
     text display_name
     text avatar_url
@@ -126,7 +127,7 @@ Also in `private`, with no relationships:
 
 | Table | Schema | Purpose | Who can read | Who can write |
 |---|---|---|---|---|
-| `profiles` | public | one per signed-in GitHub user | everyone sees players; users see their own | sign-up trigger; admin functions |
+| `profiles` | public | one per signed-in user (GitHub or Google) | everyone sees players; users see their own | sign-up trigger; `claim_handle`; admin functions |
 | `progress` | public | finished roadmap items | everyone | players insert their own (only after passing the quiz, if the item has one); never delete |
 | `quiz_attempts` | public | quiz results (solo and from duels) | finished ones: everyone, except duel sheets, which stay hidden until the duel is decided; open ones: the owner | quiz and duel functions |
 | `duels` | public | quiz duels and code races | everyone | duel functions |
@@ -155,9 +156,11 @@ All are `security definer`, with `search_path = ''`. The architecture test fixes
 | `submit_duel(duel, answers)` | both players | grade one sheet; the referee decides when both are in |
 | `submit_race(duel, passed, code)` | both racers | first pass wins; a pass after the clock is refused |
 | `finish_duel(duel)` | both players | close a duel whose clock ran out |
-| `lab_admin_overview()` | admins | waiting, declined and invited people |
-| `invite_player(github)` / `decline_player` / `remove_player` | admins | manage players (remove hides, history kept) |
-| `delete_player(github)` | admins | erase a non-admin for good: sign-in, profile and every row that mentions them, duels against others included ([ADR-0011](adr/0011-deleting-a-player-erases-everything.md)) |
+| `claim_handle(handle)` | signed-in GitHub or Google users without a player name | pick the player name, once ([ADR-0013](adr/0013-google-sign-in-and-player-names.md)) |
+| `lab_admin_overview()` | admins | waiting, declined and invited people, with the account each signed in with |
+| `invite_player(github)` / `cancel_invite(github)` | admins | invite a GitHub username before they sign in, or take the invite back |
+| `let_in_player(handle)` / `decline_player(handle)` / `remove_player(handle)` | admins | manage players by player name (remove hides, history kept) |
+| `delete_player(handle)` | admins | erase a non-admin for good: sign-in, profile and every row that mentions them, duels against others included ([ADR-0011](adr/0011-deleting-a-player-erases-everything.md)) |
 
 ## 5. Internals
 
@@ -181,7 +184,7 @@ All are `security definer`, with `search_path = ''`. The architecture test fixes
 
 | Trigger | Does |
 |---|---|
-| `on_auth_user_created` → `private.handle_new_user()` | Creates the profile. It trusts the GitHub username only when Supabase Auth recorded GitHub as the provider. |
+| `on_auth_user_created` → `private.handle_new_user()` | Creates the profile. It trusts the GitHub username only when Supabase Auth recorded GitHub as the provider, and makes it the player name if nobody holds it. Other sign-ups start without a name, photo or membership. |
 | `quiz_attempts_complete_item` → `private.complete_item_on_pass()` | A passing attempt marks the lecture done. |
 | `duels_one_open_per_player` → `private.guard_one_open_duel()` | Advisory locks ensure a player is never in two open duels. |
 
@@ -195,7 +198,7 @@ All are `security definer`, with `search_path = ''`. The architecture test fixes
   - Only security-definer functions (owned by `postgres`) read `private`.
 - **Least privilege:** API roles hold no table privileges they don't need. Protection never relies on "RLS has no policy for that" alone.
 - **Server-authoritative:** grading, duel timing, winners, the progress gate and admin rights are all decided in the database.
-- **Identity:** membership and admin rights come only from a GitHub sign-in, through `raw_app_meta_data`, which is server-controlled. The client-supplied `raw_user_meta_data` is never trusted for that.
+- **Identity:** admin rights and invites come only from a GitHub sign-in, and only GitHub or Google sign-ins can pick a player name and ask to join. Both checks read `raw_app_meta_data`, which is server-controlled. The client-supplied `raw_user_meta_data` is never trusted for that.
 - **Accepted trade-offs:**
   - Coding challenges are graded in the browser, so a solve is trusted.
   - Quiz answer keys are shown after submitting, so retaking reveals answers.
@@ -221,6 +224,8 @@ All are `security definer`, with `search_path = ''`. The architecture test fixes
 | `30_duels` | the full duel lifecycle |
 | `40_races` | secret challenge, first pass wins, late pass refused |
 | `50_players` | admin actions |
+| `52_player_names` | Google sign-ups, picking a player name, admin actions by name, cancelling invites |
+| `55_delete_player` | deleting a player and everything that mentions them |
 | `60_solves` | challenge solves |
 | `70_api_surface` | the architecture contract: exact API, RLS everywhere, nothing private reachable, pinned search_path |
 

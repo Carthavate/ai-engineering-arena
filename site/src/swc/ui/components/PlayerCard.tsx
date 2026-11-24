@@ -27,7 +27,7 @@ export function PlayerCard({ member, stats, rank, color, isMe, delay }: Props) {
         <Avatar member={member} size={64} color={color} />
         <div className="player-id">
           <div className="player-name">
-            <a href={href({ page: "player", player: member.github_username })}>{member.display_name || member.github_username}</a>
+            <a href={href({ page: "player", player: member.handle })}>{member.display_name || member.handle}</a>
             {isMe && <span className="tag-you">you</span>}
           </div>
           <div className="player-title">Lv {level.level} · {level.title}</div>

@@ -337,11 +337,13 @@ describe("usePlayers through the PlayersPort", () => {
       players: {
         overview: async () => { overviews++; return ok({ waiting: [], declined: [], invited: [] }); },
         invite: async () => ok({ signedIn: false }),
+        cancelInvite: async () => ok(null),
+        letIn: async () => ok(null),
         remove: async () => ok(null),
         decline: async () => ok(null),
-        delete: async (github) => {
-          deleted.push(github);
-          return github === "boss" ? fail("Admins can't be deleted") : ok(null);
+        delete: async (handle) => {
+          deleted.push(handle);
+          return handle === "boss" ? fail("Admins can't be deleted") : ok(null);
         },
       },
     });
@@ -356,6 +358,29 @@ describe("usePlayers through the PlayersPort", () => {
 
     await act(async () => { expect(await result.current.delete("boss")).toEqual(fail("Admins can't be deleted")); });
     expect(overviews).toBe(loaded + 1);
+    expect(boardReloads).toBe(1);
+  });
+
+  it("lets a waiting player in by name and reloads the board; cancelling an invite leaves the board alone", async () => {
+    const calls: string[] = [];
+    let boardReloads = 0;
+    const rte = fakeRte({
+      players: {
+        overview: async () => ok({ waiting: [], declined: [], invited: [] }),
+        invite: async () => ok({ signedIn: false }),
+        cancelInvite: async (github) => { calls.push(`cancel ${github}`); return ok(null); },
+        letIn: async (handle) => { calls.push(`let in ${handle}`); return ok(null); },
+        remove: async () => ok(null),
+        decline: async () => ok(null),
+        delete: async () => ok(null),
+      },
+    });
+    const { result } = renderHook(() => usePlayers(true, () => { boardReloads++; }), { wrapper: wrapper(rte) });
+    await waitFor(() => expect(result.current.overview).not.toBeNull());
+
+    await act(async () => { await result.current.letIn("Skywalker"); });
+    await act(async () => { await result.current.cancelInvite("future-friend"); });
+    expect(calls).toEqual(["let in Skywalker", "cancel future-friend"]);
     expect(boardReloads).toBe(1);
   });
 });

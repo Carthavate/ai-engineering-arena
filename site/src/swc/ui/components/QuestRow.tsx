@@ -66,7 +66,7 @@ export function QuestRow({ item, data, compact = false, phaseLabel }: Props) {
             {scored.map((m) => {
               const s = best[m.id];
               return (
-                <span key={m.id} className={`score${s.score === s.total ? " perfect" : ""}`} title={`Best score of ${m.github_username}`}>
+                <span key={m.id} className={`score${s.score === s.total ? " perfect" : ""}`} title={`Best score of ${m.handle}`}>
                   <Avatar member={m} size={16} color={data.colorOf(m.id)} /> {s.score}/{s.total}
                 </span>
               );
