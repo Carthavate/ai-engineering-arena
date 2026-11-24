@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { keepSession, openSignInPopup, restoreSession, SESSION_KEY, signInWithPopup } from "./auth";
+import { annaAuth, keepSession, openSignInPopup, restoreSession, SESSION_KEY, signInWithPopup } from "./auth";
 import type { AnnaHost } from "./host";
 
 afterEach(() => {
@@ -116,6 +116,51 @@ describe("signInWithPopup", () => {
     await vi.advanceTimersByTimeAsync(4000);
     await outcome;
     expect(auth.exchangeCodeForSession).not.toHaveBeenCalled();
+  });
+});
+
+describe("annaAuth sign-in", () => {
+  const CALLBACK_ORIGIN = "https://carthavate.github.io";
+  const fromPopup = (popup: Window, code: string) =>
+    window.dispatchEvent(new MessageEvent("message", { data: { type: "arena-auth", code }, origin: CALLBACK_ORIGIN, source: popup as unknown as MessageEventSource }));
+
+  it("clicking Sign in again replaces the attempt still waiting, quietly", async () => {
+    const { client, auth } = fakeClient();
+    // window.open with the same name gives back the same popup, as browsers do.
+    const popup = { closed: false, location: { href: "about:blank" }, close: vi.fn() } as unknown as Window;
+    vi.spyOn(window, "open").mockReturnValue(popup);
+    const alert = vi.spyOn(window, "alert").mockImplementation(() => undefined);
+    const port = annaAuth(client);
+
+    const first = port.signIn("github");
+    await vi.waitFor(() => expect(auth.signInWithOAuth).toHaveBeenCalledTimes(1));
+    const second = port.signIn("github");
+    await vi.waitFor(() => expect(auth.signInWithOAuth).toHaveBeenCalledTimes(2));
+    fromPopup(popup, "latest");
+    await Promise.all([first, second]);
+
+    // Only the newest attempt exchanges the code (it holds the PKCE verifier), and the old one says nothing.
+    expect(auth.exchangeCodeForSession).toHaveBeenCalledTimes(1);
+    expect(auth.exchangeCodeForSession).toHaveBeenCalledWith("latest");
+    expect(alert).not.toHaveBeenCalled();
+  });
+
+  it("logs why Supabase refused a code, and tells the player", async () => {
+    const { client, auth } = fakeClient();
+    const refusal = { name: "AuthPKCECodeVerifierMissingError", message: "PKCE code verifier not found in storage." };
+    auth.exchangeCodeForSession.mockResolvedValueOnce({ error: refusal } as never);
+    const popup = { closed: false, location: { href: "about:blank" }, close: vi.fn() } as unknown as Window;
+    vi.spyOn(window, "open").mockReturnValue(popup);
+    const alert = vi.spyOn(window, "alert").mockImplementation(() => undefined);
+    const logged = vi.spyOn(console, "error").mockImplementation(() => undefined);
+
+    const done = annaAuth(client).signIn("google");
+    await vi.waitFor(() => expect(auth.signInWithOAuth).toHaveBeenCalled());
+    fromPopup(popup, "code");
+    await done;
+
+    expect(alert).toHaveBeenCalledWith("Sign-in failed: the sign-in code was refused. Try again.");
+    expect(logged.mock.calls.flat()).toContain(refusal);
   });
 });
 
