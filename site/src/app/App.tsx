@@ -235,6 +235,7 @@ export function App() {
 
       <footer className="foot">
         Built by TWadi and GhassenJamoussi99 · <a href="https://github.com/Carthavate/ai-engineering-arena" target="_blank" rel="noopener">Code on GitHub</a>
+        {" · "}<a href="https://carthavate.github.io/ai-engineering-arena/privacy.html" target="_blank" rel="noopener">Privacy</a>
       </footer>
     </div>
   );
