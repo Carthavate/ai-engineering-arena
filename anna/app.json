@@ -4,5 +4,15 @@
   "version": "0.1.3",
   "tagline": "Learn AI engineering with friends: a RAG course with an AI tutor that cites our notes, quizzes, duels and a shared leaderboard.",
   "description": "The AI Engineering Arena turns learning AI engineering into a game you play with friends.\n\n- **RAG course**: 17 short video lessons, each with our lecture notes.\n- **Ask the course**: an AI tutor that answers from those notes (and your own), shows how it searched (keyword, meaning, reciprocal rank fusion) and cites the passages it used. It runs on Anna's AI, so there's nothing to download.\n- **Quizzes and duels**: pass a quiz to finish a lesson, or challenge a friend to a live quiz duel.\n- **Lab**: graded Python challenges and a Python notebook, running in the app.\n- **One leaderboard**: sign in with GitHub or Google and your XP, badges and streaks are the same as on the website, carthavate.github.io/ai-engineering-arena.\n\nFree and open source (Apache 2.0): github.com/Carthavate/ai-engineering-arena",
-  "category": "education"
+  "category": "education",
+  "homepage_url": "https://carthavate.github.io/ai-engineering-arena/",
+  "support_url": "https://github.com/Carthavate/ai-engineering-arena/issues",
+  "privacy_url": "https://carthavate.github.io/ai-engineering-arena/privacy.html",
+  "logo_file": "listing/logo.png",
+  "screenshots": [
+    "listing/1-dashboard.jpg",
+    "listing/2-lesson.jpg",
+    "listing/3-lab.jpg"
+  ],
+  "changelog": "Sign in with GitHub or Google, pick a player name, and play on the same leaderboard as the website. Sign-in is more reliable when you click Sign in more than once."
 }
