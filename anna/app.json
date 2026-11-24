@@ -1,8 +1,8 @@
 {
   "slug": "ai-engineering-arena",
   "name": "AI Engineering Arena",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "tagline": "Learn AI engineering with friends: a RAG course with an AI tutor that cites our notes, quizzes, duels and a shared leaderboard.",
-  "description": "The AI Engineering Arena turns learning AI engineering into a game you play with friends.\n\n- **RAG course**: 17 short video lessons, each with our lecture notes.\n- **Ask the course**: an AI tutor that answers from those notes (and your own), shows how it searched (keyword, meaning, reciprocal rank fusion) and cites the passages it used. It runs on Anna's AI, so there's nothing to download.\n- **Quizzes and duels**: pass a quiz to finish a lesson, or challenge a friend to a live quiz duel.\n- **Lab**: graded Python challenges and a Python notebook, running in the app.\n- **One leaderboard**: sign in with GitHub and your XP, badges and streaks are the same as on the website, carthavate.github.io/ai-engineering-arena.\n\nFree and open source (Apache 2.0): github.com/Carthavate/ai-engineering-arena",
+  "description": "The AI Engineering Arena turns learning AI engineering into a game you play with friends.\n\n- **RAG course**: 17 short video lessons, each with our lecture notes.\n- **Ask the course**: an AI tutor that answers from those notes (and your own), shows how it searched (keyword, meaning, reciprocal rank fusion) and cites the passages it used. It runs on Anna's AI, so there's nothing to download.\n- **Quizzes and duels**: pass a quiz to finish a lesson, or challenge a friend to a live quiz duel.\n- **Lab**: graded Python challenges and a Python notebook, running in the app.\n- **One leaderboard**: sign in with GitHub or Google and your XP, badges and streaks are the same as on the website, carthavate.github.io/ai-engineering-arena.\n\nFree and open source (Apache 2.0): github.com/Carthavate/ai-engineering-arena",
   "category": "education"
 }
