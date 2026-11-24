@@ -16,6 +16,7 @@ export function PlayerNameForm({ takenGithub, claim }: PlayerNameFormProps) {
   const titleId = useId();
   const inputId = useId();
   const hintId = useId();
+  const errorId = useId();
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
@@ -41,10 +42,11 @@ export function PlayerNameForm({ takenGithub, claim }: PlayerNameFormProps) {
       <form className="invite-form" onSubmit={(e) => void submit(e)}>
         <label className="sr-only" htmlFor={inputId}>Player name</label>
         <input id={inputId} className="lab-input" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. rag-wizard"
-          maxLength={40} autoComplete="nickname" spellCheck={false} aria-describedby={hintId} autoFocus />
+          maxLength={40} autoComplete="nickname" spellCheck={false}
+          aria-describedby={error ? `${hintId} ${errorId}` : hintId} aria-invalid={error ? true : undefined} />
         <button type="submit" className="btn btn-primary" disabled={busy || !name.trim()}>{busy ? "Saving…" : "Save"}</button>
       </form>
-      {error && <p className="form-error" role="alert">{error}</p>}
+      {error && <p id={errorId} className="form-error" role="alert">{error}</p>}
     </section>
   );
 }

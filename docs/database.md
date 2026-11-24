@@ -184,7 +184,7 @@ All are `security definer`, with `search_path = ''`. The architecture test fixes
 
 | Trigger | Does |
 |---|---|
-| `on_auth_user_created` → `private.handle_new_user()` | Creates the profile. It trusts the GitHub username only when Supabase Auth recorded GitHub as the provider, and makes it the player name if nobody holds it. Other sign-ups start without a name, photo or membership. |
+| `on_auth_user_created` → `private.handle_new_user()` | Creates the profile. It trusts the GitHub username only when Supabase Auth recorded GitHub as the provider, and makes it the player name if nobody holds it. Other sign-ups start without a name, photo or membership. A profile without a name is never a member (`profiles_member_has_handle`). |
 | `quiz_attempts_complete_item` → `private.complete_item_on_pass()` | A passing attempt marks the lecture done. |
 | `duels_one_open_per_player` → `private.guard_one_open_duel()` | Advisory locks ensure a player is never in two open duels. |
 

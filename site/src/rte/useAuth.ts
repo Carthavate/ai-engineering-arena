@@ -66,7 +66,12 @@ export function useAuth(): AuthState {
 
   const claimHandle = useCallback(async (name: string) => {
     const res = await auth.claimHandle(name);
-    if (res.ok && userId) setProfile(await auth.loadProfile(userId));
+    if (!res.ok || !userId) return res;
+    const named = (p: Profile | null) => (p && p.id === userId ? { ...p, handle: res.value } : p);
+    setProfile(named);
+    // Claiming can also make them a player (an invite waiting for a name): reload, keeping the name if that fails.
+    const fresh = await auth.loadProfile(userId);
+    if (fresh) setProfile((cur) => (cur && cur.id === fresh.id ? fresh : cur));
     return res;
   }, [auth, userId]);
 

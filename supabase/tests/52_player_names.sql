@@ -9,8 +9,10 @@ select tests.eq((select handle from public.profiles where id = :'pal'), 'pal', '
 
 -- A Google sign-up starts without a name, photo or membership, whatever its metadata says.
 insert into auth.users (raw_user_meta_data, raw_app_meta_data) values (
-  '{"full_name": "Jane Doe", "name": "Jane Doe", "user_name": "boss", "avatar_url": "https://lh3.googleusercontent.com/a/x"}',
+  '{"full_name": "Ghassen Jamoussi", "user_name": "boss", "avatar_url": "https://lh3.googleusercontent.com/a/x"}',
   '{"provider": "google", "providers": ["google"]}') returning id as jane \gset
+insert into auth.identities (user_id, provider, identity_data)
+  values (:'jane', 'google', '{"full_name": "Jane Doe", "name": "Jane Doe", "email": "jane@example.com"}');
 select tests.eq((select handle || '|' || github_username from public.profiles where id = :'jane'), '|', 'no name yet');
 select tests.eq((select display_name is null and avatar_url is null from public.profiles where id = :'jane'), true,
                 'the Google name and photo are not copied into the public profile');
@@ -43,7 +45,8 @@ insert into auth.users (raw_user_meta_data, raw_app_meta_data) values ('{}', '{"
 select tests.as_user(:'mailer');
 select tests.throws($$select public.claim_handle('mailer')$$, 'GitHub or Google');
 
--- Admins see who is asking: the player name, the provider and (only here) the Google account's name.
+-- Admins see who is asking: the player name, the provider and (only here) the name in the identity Google
+-- signed, not the editable user metadata.
 select tests.as_user(:'pal');
 select tests.throws($$select public.let_in_player('skywalker')$$, 'Only admins');
 select tests.throws($$select public.cancel_invite('future-friend')$$, 'Only admins');
@@ -63,19 +66,32 @@ select tests.eq((select display_name from public.profiles where id = :'jane'), n
 select tests.as_user(:'boss');
 select tests.throws($$select public.let_in_player('Skywalker')$$, 'Nobody with that player name is waiting');
 
--- A GitHub user whose username a Google player already holds signs in nameless and picks another name.
+-- An invited GitHub user whose username a Google player already holds signs in nameless, and is not a player
+-- until they pick another name (every player has a name).
+select tests.as_user(:'boss');
+select public.invite_player('skywalker');
 select tests.as_postgres();
 insert into auth.users (raw_user_meta_data, raw_app_meta_data) values ('{"user_name": "skywalker"}', '{"provider": "github"}')
   returning id as gh_sky \gset
 select tests.eq((select handle || '|' || github_username from public.profiles where id = :'gh_sky'), '|skywalker',
                 'the GitHub username is kept, the name is not');
+select tests.eq((select is_member from public.profiles where id = :'gh_sky'), false, 'invited, but not a player without a name');
+select tests.throws($$update public.profiles set is_member = true where github_username = 'skywalker'$$, 'profiles_member_has_handle');
+select tests.as_user(:'boss');
+select public.invite_player('skywalker');
+select tests.as_postgres();
+select tests.eq((select is_member from public.profiles where id = :'gh_sky'), false, 'inviting again doesn''t promote a nameless profile');
 select tests.as_user(:'gh_sky');
 select tests.eq(public.claim_handle('sky-gh'), 'sky-gh', 'GitHub players can pick a name too');
-select tests.as_user(:'boss');
-select public.let_in_player('sky-gh');
 select tests.as_postgres();
-select tests.eq((select count(*) from private.members where github_username = 'skywalker')::int, 1,
-                'letting in a GitHub player also puts their username on the members list');
+select tests.eq((select is_member from public.profiles where id = :'gh_sky'), true, 'the invite completes once they have a name');
+
+-- Letting in a waiting GitHub player also puts their username on the members list, as an invite would.
+select tests.user('waiter', false) as waiter \gset
+select tests.as_user(:'boss');
+select public.let_in_player('WAITER');
+select tests.as_postgres();
+select tests.eq((select count(*) from private.members where github_username = 'waiter')::int, 1, 'on the members list');
 
 -- Remove and delete work by player name, for Google players too.
 select tests.as_user(:'boss');

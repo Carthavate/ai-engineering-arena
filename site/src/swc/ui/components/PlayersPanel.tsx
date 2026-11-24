@@ -57,8 +57,11 @@ export function PlayersPanel({ data, admin }: { readonly data: LabData; readonly
   const cancelDelete = (handle: string) => {
     setDeleting(null);
     setDeleteError(null);
-    // Back to the button that opened the form (names are letters, digits and dashes: safe in a selector).
-    requestAnimationFrame(() => panelRef.current?.querySelector<HTMLButtonElement>(`[data-delete-for="${handle}"]`)?.focus());
+    // Back to the button that opened the form (compared as data, not put in a selector: names come from users).
+    requestAnimationFrame(() => {
+      const buttons = panelRef.current?.querySelectorAll<HTMLButtonElement>("[data-delete-for]") ?? [];
+      Array.from(buttons).find((b) => b.dataset.deleteFor === handle)?.focus();
+    });
   };
   /** Unlike the other actions, a failed delete keeps its form open and shows the error there. */
   const confirmDelete = async (handle: string) => {

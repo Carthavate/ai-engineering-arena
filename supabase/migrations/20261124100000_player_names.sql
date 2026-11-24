@@ -5,7 +5,10 @@
 -- Admin actions now name players by handle. Inviting ahead of sign-up stays GitHub-only (invite_player), since
 -- only a GitHub username can be known before someone signs in; cancel_invite takes such an invite back.
 -- Google profiles store no name or photo: member profiles are public, and a Google account's name and photo
--- aren't. Admins see the Google account's name in lab_admin_overview, to know who is asking to join.
+-- aren't. Admins see the Google account's name in lab_admin_overview, to know who is asking to join. It is read
+-- from the identity Google signed (auth.identities), not from user metadata, which users can edit.
+-- Every player has a name: a profile without one is never a member (an invited GitHub user whose username is
+-- taken becomes a player once they pick another name).
 --
 -- Deploy: apply this before the site that uses it (the current site keeps working on it, except that
 -- Decline, Remove and Delete in the Players panel fail until the new site is live).
@@ -13,6 +16,7 @@
 alter table public.profiles add column if not exists handle text not null default '';
 update public.profiles set handle = github_username where handle = '' and github_username <> '';
 create unique index if not exists profiles_handle_lower_key on public.profiles (lower(handle)) where handle <> '';
+alter table public.profiles add constraint profiles_member_has_handle check (not is_member or handle <> '');
 
 -- ── Sign-up ───────────────────────────────────────────────────────────────────────────────────────────
 create or replace function private.handle_new_user()
@@ -26,18 +30,21 @@ declare
                          or coalesce(new.raw_app_meta_data -> 'providers', '[]'::jsonb) ? 'github';
   uname text := case when from_github then nullif(trim(new.raw_user_meta_data ->> 'user_name'), '') end;
   name_free boolean := uname is not null and not exists (select 1 from public.profiles p where lower(p.handle) = lower(uname));
+  invited boolean := uname is not null and exists (select 1 from private.members m where lower(m.github_username) = lower(uname));
+  admin boolean := uname is not null and exists (select 1 from private.admins a where lower(a.github_username) = lower(uname));
+  -- Only GitHub's public name and avatar are copied; other accounts start without a name or photo.
+  shown_name text := case when from_github then new.raw_user_meta_data ->> 'full_name' end;
+  avatar text := case when from_github then new.raw_user_meta_data ->> 'avatar_url' end;
 begin
-  insert into public.profiles (id, github_username, handle, display_name, avatar_url, is_member, is_admin)
-  values (
-    new.id,
-    coalesce(uname, ''),
-    case when name_free then uname else '' end,
-    -- Only GitHub's public name and avatar are copied; other accounts start without a name or photo.
-    case when from_github then new.raw_user_meta_data ->> 'full_name' end,
-    case when from_github then new.raw_user_meta_data ->> 'avatar_url' end,
-    uname is not null and exists (select 1 from private.members m where lower(m.github_username) = lower(uname)),
-    uname is not null and exists (select 1 from private.admins a where lower(a.github_username) = lower(uname))
-  );
+  begin
+    insert into public.profiles (id, github_username, handle, display_name, avatar_url, is_member, is_admin)
+    values (new.id, coalesce(uname, ''), case when name_free then uname else '' end, shown_name, avatar,
+            name_free and invited, admin);
+  exception when unique_violation then
+    -- Someone took the name in the same instant: sign up without it and pick one.
+    insert into public.profiles (id, github_username, handle, display_name, avatar_url, is_member, is_admin)
+    values (new.id, coalesce(uname, ''), '', shown_name, avatar, false, admin);
+  end;
   return new;
 end;
 $$;
@@ -81,7 +88,12 @@ begin
      or exists (select 1 from private.admins a where lower(a.github_username) = lower(name)) then
     raise exception 'That player name is taken';
   end if;
-  update public.profiles set handle = name where id = uid and handle = '';
+  -- An invited GitHub user whose username was taken becomes a player now that they have a name.
+  update public.profiles p
+     set handle = name,
+         is_member = p.is_member or (p.github_username <> '' and exists (
+           select 1 from private.members m where lower(m.github_username) = lower(p.github_username)))
+   where p.id = uid and p.handle = '';
   return name;
 exception when unique_violation then
   raise exception 'That player name is taken';
@@ -168,6 +180,33 @@ $$;
 revoke all on function public.remove_player(text) from public, anon;
 grant execute on function public.remove_player(text) to authenticated;
 
+-- Invite a GitHub username ahead of sign-up (unchanged), except that a profile without a name isn't promoted:
+-- it becomes a player when it picks one (claim_handle).
+create or replace function public.invite_player(p_github text)
+returns jsonb
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  name text := trim(p_github);
+  promoted int;
+begin
+  if not private.is_lab_admin() then
+    raise exception 'Only admins can invite players';
+  end if;
+  if name is null or name !~ '^[A-Za-z0-9](?:[A-Za-z0-9]|-(?=[A-Za-z0-9])){0,38}$' then
+    raise exception 'That is not a valid GitHub username';
+  end if;
+  insert into private.members (github_username) values (name) on conflict do nothing;
+  update public.profiles set is_member = true, declined_at = null
+   where lower(github_username) = lower(name) and not is_member and handle <> '';
+  get diagnostics promoted = row_count;
+  return jsonb_build_object('github_username', name, 'signed_in', promoted > 0
+         or exists (select 1 from public.profiles p where lower(p.github_username) = lower(name)));
+end;
+$$;
+
 -- Take back an invite for a GitHub username nobody has signed in with yet.
 create or replace function public.cancel_invite(p_github text)
 returns void
@@ -241,9 +280,9 @@ revoke all on function public.delete_player(text) from public, anon;
 grant execute on function public.delete_player(text) to authenticated;
 
 -- ── The admins' overview ──────────────────────────────────────────────────────────────────────────────
--- provider: 'github' or the sign-in's provider; account_name: GitHub's public name, or the Google account's
--- name (only admins see it, here).
-create or replace function private.waiting_entry(p public.profiles, app jsonb, meta jsonb)
+-- provider: 'github' or the sign-in's provider. account_name: GitHub's public name (copied at sign-up), or the
+-- name in the identity Google signed. Not raw_user_meta_data: users can change that (auth.updateUser).
+create or replace function private.waiting_entry(p public.profiles, app jsonb)
 returns jsonb
 language sql
 stable
@@ -253,12 +292,17 @@ as $$
     'handle', p.handle,
     'github_username', p.github_username,
     'provider', case when p.github_username <> '' then 'github' else coalesce(app ->> 'provider', '') end,
-    'account_name', coalesce(p.display_name, meta ->> 'full_name', meta ->> 'name'),
+    'account_name', coalesce(p.display_name, (
+      select coalesce(i.identity_data ->> 'full_name', i.identity_data ->> 'name')
+        from auth.identities i
+       where i.user_id = p.id and i.provider = 'google'
+       order by i.created_at
+       limit 1)),
     'display_name', p.display_name,
     'avatar_url', p.avatar_url,
     'signed_in_at', p.created_at)
 $$;
-revoke all on function private.waiting_entry(public.profiles, jsonb, jsonb) from public, anon, authenticated;
+revoke all on function private.waiting_entry(public.profiles, jsonb) from public, anon, authenticated;
 
 create or replace function public.lab_admin_overview()
 returns jsonb
@@ -272,11 +316,11 @@ begin
   end if;
   return jsonb_build_object(
     'waiting', coalesce((
-      select jsonb_agg(private.waiting_entry(p, u.raw_app_meta_data, u.raw_user_meta_data) order by p.created_at desc)
+      select jsonb_agg(private.waiting_entry(p, u.raw_app_meta_data) order by p.created_at desc)
         from public.profiles p left join auth.users u on u.id = p.id
        where not p.is_member and p.declined_at is null and p.handle <> ''), '[]'::jsonb),
     'declined', coalesce((
-      select jsonb_agg(private.waiting_entry(p, u.raw_app_meta_data, u.raw_user_meta_data) order by p.declined_at desc)
+      select jsonb_agg(private.waiting_entry(p, u.raw_app_meta_data) order by p.declined_at desc)
         from public.profiles p left join auth.users u on u.id = p.id
        where not p.is_member and p.declined_at is not null and p.handle <> ''), '[]'::jsonb),
     'invited', coalesce((

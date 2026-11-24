@@ -68,7 +68,7 @@ export function TopBar({ page, auth, enabled, myStats, myColor, invites, onBell 
           </>
         ) : (
           <div className="signin" role="group" aria-label="Sign in">
-            <span className="signin-label">Sign in with</span>
+            <span className="signin-label" aria-hidden="true">Sign in with</span>
             <button type="button" className="btn btn-primary" onClick={() => void signIn("github")} aria-label="Sign in with GitHub">GitHub</button>
             <button type="button" className="btn" onClick={() => void signIn("google")} aria-label="Sign in with Google">Google</button>
           </div>

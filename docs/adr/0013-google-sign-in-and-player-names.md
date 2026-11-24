@@ -19,6 +19,7 @@ A Google account has no username. Its name and photo are private to Google, and 
   - A GitHub sign-up gets its username as its player name, as before.
   - A Google sign-up picks one at first sign-in: 3 to 39 letters, digits or single hyphens. The name can't be changed later.
   - A GitHub sign-up whose username someone here already holds picks one the same way. Their GitHub username is kept for the link to their GitHub profile.
+  - Every player has a name: the database refuses a member without one. An invited GitHub user whose username is taken becomes a player once they pick another name.
 - **Names can't be used to pose as someone.**
   - A player can't pick a name that another player already holds. They also can't pick a GitHub username that an admin invited or made an admin, because its owner may sign in later.
   - Only sign-ins that Supabase Auth records as GitHub or Google can pick a name. The provider is in `raw_app_meta_data`, which only the server writes. Email or other sign-ups stay invisible, as in ADR-0009.
@@ -26,6 +27,7 @@ A Google account has no username. Its name and photo are private to Google, and 
 - **Google players' profiles are minimal.**
   - The public profile of a Google player has the player name only. Their Google name and photo are not copied.
   - Admins see the Google account's name in the Players panel, and only there, to know who is asking to join.
+  - That name comes from the identity Google signed (`auth.identities`), not from user metadata, which a signed-in user can change.
 - **Admin actions are split by what they act on.**
   - Inviting ahead of sign-up stays GitHub-only (`invite_player`), since only a GitHub username can be known before someone signs in. `cancel_invite` takes such an invite back.
   - Everything else is done by player name: `let_in_player`, `decline_player`, `remove_player` and `delete_player`. Before this, "Let in" reused `invite_player`, and cancelling an invite reused `remove_player`. Now a Google player who picked a name can never be confused with a GitHub invite for the same name.
