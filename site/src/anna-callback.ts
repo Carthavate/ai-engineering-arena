@@ -25,7 +25,7 @@ if (!window.opener) {
   finish.addEventListener("click", () => {
     window.opener?.postMessage(message, ANNA_ORIGIN);
     finish.hidden = true;
-    show("Signed in. You can close this window.");
+    show("Sent to the Arena. Go back to the app: it finishes signing you in, or tells you if it couldn't.");
     setTimeout(() => window.close(), 300);
   }, { once: true });
 }
