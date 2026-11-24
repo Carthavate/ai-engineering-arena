@@ -9,7 +9,7 @@ import type { Profile } from "../../logic/types";
 
 export function PlayerLink({ member }: { readonly member: Profile | undefined }) {
   if (!member) return <b>Someone</b>;
-  return <a className="player-link" href={href({ page: "player", player: member.github_username })}>{member.display_name || member.github_username}</a>;
+  return <a className="player-link" href={href({ page: "player", player: member.handle })}>{member.display_name || member.handle}</a>;
 }
 
 interface Props {

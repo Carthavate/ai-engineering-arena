@@ -57,7 +57,7 @@ module.exports = {
       name: "no-orphans",
       severity: "error",
       comment: "Every module must be used (tests, type declarations and the entry point excepted).",
-      from: { orphan: true, pathNot: ["\.test\.tsx?$", "\.d\.ts$", "^src/main\.tsx$", "Worker\.ts$"] },
+      from: { orphan: true, pathNot: ["\.test\.tsx?$", "\.d\.ts$", "^src/main\.tsx$", "^src/anna-(main|callback)\.tsx?$", "Worker\.ts$"] },
       to: {},
     },
   ],

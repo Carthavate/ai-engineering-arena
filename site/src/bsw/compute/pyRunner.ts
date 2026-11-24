@@ -1,5 +1,8 @@
 import type { ChallengeTest, RunResult, RunnerState } from "../../swc/logic/lab/challenges";
 
+/** Absolute, because the worker resolves relative URLs against its own script (the Anna build uses a relative base). */
+const harnessLocation = (): string => new URL(`${import.meta.env.BASE_URL}harness.py`, document.baseURI).href;
+
 /** Max time for one run once Python is loaded. Loading itself (a one-time ~10 MB download) is not timed. */
 const RUN_TIMEOUT_MS = 8000;
 
@@ -14,7 +17,7 @@ function spawn(): Worker {
 /** Start downloading Python in the background (e.g. while a race counts down). Safe to call repeatedly. */
 export function preloadPython(): void {
   const w = worker ?? spawn();
-  w.postMessage({ id: nextId++, harnessUrl: `${import.meta.env.BASE_URL}harness.py` });
+  w.postMessage({ id: nextId++, harnessUrl: harnessLocation() });
 }
 
 /** Run code against tests in a worker. If it hangs, the worker is killed and the next run starts fresh. */
@@ -25,7 +28,7 @@ export function runChallenge(
 ): Promise<RunResult> {
   const w = worker ?? spawn();
   const id = nextId++;
-  const harnessUrl = `${import.meta.env.BASE_URL}harness.py`;
+  const harnessUrl = harnessLocation();
 
   return new Promise((resolve) => {
     let timer: number | undefined;

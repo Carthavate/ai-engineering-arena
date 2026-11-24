@@ -3,6 +3,7 @@ import { useAskCourse } from "../../../rte/useAskCourse";
 import { lessonNoteId } from "../../logic/lesson";
 import type { RoadmapItem } from "../../logic/roadmap";
 import { loadAiPref, saveAiPref, Turn } from "../lab/AskTurn";
+import { useRte } from "../../../rte/RteContext";
 
 interface Props {
   readonly item: RoadmapItem;
@@ -14,6 +15,7 @@ interface Props {
 
 /** "Ask the course", limited to this lecture's notes and the player's notes on it. */
 export function LessonAsk({ item, hasLecture, notesVersion }: Props) {
+  const { llm } = useRte();
   const course = useAskCourse();
   const [question, setQuestion] = useState("");
   const [useAi, setUseAi] = useState(loadAiPref);
@@ -73,7 +75,7 @@ export function LessonAsk({ item, hasLecture, notesVersion }: Props) {
       <div className="ask-options">
         <label className="tok-toggle">
           <input type="checkbox" checked={useAi} onChange={(e) => { setUseAi(e.target.checked); saveAiPref(e.target.checked); }} />
-          Write answers with the local AI (about 800 MB the first time)
+          Write answers with {llm.info.label}
         </label>
         {ai.state === "loading" && <span className="muted small-text">Loading the AI{ai.pct !== null ? `… ${ai.pct}%` : "…"}</span>}
         {ai.state === "error" && <span className="form-error small-text">The AI couldn't start here; you still get the best passages.</span>}

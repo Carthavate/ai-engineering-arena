@@ -70,7 +70,7 @@ export default function LabPage({ data, sub }: { readonly data: LabData; readonl
           <p className="eyebrow">Hands-on</p>
           <h1>The Lab</h1>
           <p className="lede">
-            Solve graded Python challenges, race a friend, experiment in a notebook, and poke at real embedding models, tokenizers and a local LLM. All in your browser, nothing to install, nothing to pay.
+            Solve graded Python challenges, race a friend, experiment in a notebook, and poke at real embedding models, tokenizers and an LLM. Nothing to install.
           </p>
           <nav className="lab-tabs" aria-label="Lab sections">
             {TABS.map((t) => (

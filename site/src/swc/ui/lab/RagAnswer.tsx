@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useRte } from "../../../rte/RteContext";
-import { ragMessages, type LlmDevice } from "../../logic/lab/llm";
+import { deviceLabel, ragMessages, type LlmDevice } from "../../logic/lab/llm";
 
 interface Props {
   readonly question: string;
@@ -16,7 +16,7 @@ type Status =
 
 const MAX_TOKENS = 160;
 
-/** The "G" in RAG: a small LLM running in the browser writes an answer from the retrieved chunks. */
+/** The "G" in RAG: an LLM writes an answer from the retrieved chunks. */
 export function RagAnswer({ question, chunks }: Props) {
   const { llm } = useRte();
   const [status, setStatus] = useState<Status>({ name: "idle" });
@@ -52,8 +52,8 @@ export function RagAnswer({ question, chunks }: Props) {
         <div>
           <h3>Generate the answer</h3>
           <p className="muted small-text">
-            Qwen2.5-0.5B-Instruct, running in your browser. First use downloads about 800 MB on a GPU or 500 MB on CPU (cached after that), so try it on Wi-Fi.
-            {device && <> Running on <b>{device === "webgpu" ? "your GPU (WebGPU)" : "your CPU (slower)"}</b>.</>}
+            {llm.info.detail}
+            {device && <> Running on <b>{deviceLabel(device)}</b>.</>}
           </p>
         </div>
         {status.name === "generating" ? (

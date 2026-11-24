@@ -1,4 +1,20 @@
-export type LlmDevice = "webgpu" | "wasm";
+/** Where the model runs: on the player's GPU or CPU, or on the host (Anna's model, in the Anna app). */
+export type LlmDevice = "webgpu" | "wasm" | "host";
+
+/** How the UI describes a model before and while it runs. */
+export interface ModelInfo {
+  /** Finishes "Write answers with …", e.g. "the local AI (Qwen2.5, about 800 MB the first time)". */
+  readonly label: string;
+  /** One or two sentences: which model, where it runs, what it downloads. */
+  readonly detail: string;
+}
+
+/** Where a running model is, for "AI running on …". */
+export function deviceLabel(device: LlmDevice): string {
+  if (device === "webgpu") return "your GPU";
+  if (device === "wasm") return "your CPU (slower)";
+  return "Anna's model";
+}
 
 export interface ChatMessage {
   readonly role: "system" | "user" | "assistant";

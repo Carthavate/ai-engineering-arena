@@ -2,6 +2,7 @@ import { useState } from "react";
 import { RagAnswer } from "./RagAnswer";
 import { LoadNote, useEmbed } from "./useEmbed";
 import { chunkText, cosine, pca2d, rank } from "../../logic/lab/vectors";
+import { useRte } from "../../../rte/RteContext";
 
 const SAMPLE_SENTENCES = [
   "The cat sat on the warm windowsill.",
@@ -172,10 +173,11 @@ function MiniRag() {
 }
 
 export function Playground() {
+  const { embedder, llm } = useRte();
   return (
     <div className="playground">
       <p className="banner info">
-        Everything here runs in your browser with transformers.js. The embedding model is small (about 23 MB); the optional answer step uses a 500–800 MB LLM. Both download once from Hugging Face and are cached.
+        {embedder.info.detail} The optional answer step uses {llm.info.label}.
       </p>
       <SimilarityLab />
       <MiniRag />

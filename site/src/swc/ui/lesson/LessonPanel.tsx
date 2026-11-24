@@ -11,6 +11,7 @@ import { LessonLab } from "./LessonLab";
 import { LessonNotes } from "./LessonNotes";
 import { LessonVideo } from "./LessonVideo";
 import "./lesson.css";
+import { useRte } from "../../../rte/RteContext";
 
 interface Props {
   readonly itemId: string;
@@ -34,6 +35,7 @@ function typing(target: EventTarget): boolean {
 
 /** Study one lesson without leaving the page: video, quiz, duel, scoped Ask, private notes, friends. */
 export default function LessonPanel({ itemId, data, onGo, onClose }: Props) {
+  const { embedder } = useRte();
   const ref = useRef<HTMLDialogElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
   const titleRef = useRef<HTMLHeadingElement>(null);
@@ -129,7 +131,7 @@ export default function LessonPanel({ itemId, data, onGo, onClose }: Props) {
           </div>
           {askOpen
             ? <LessonAsk item={item} hasLecture={notes.length > 0} notesVersion={notesVersion} />
-            : <p className="muted small-text">Answers come only from this lecture's notes and your notes on it, with citations. Runs in your browser (the search model downloads once, about 25 MB).</p>}
+            : <p className="muted small-text">Answers come only from this lecture's notes and your notes on it, with citations. {embedder.info.detail}</p>}
         </section>
 
         <LessonNotes item={item} onSaved={() => setNotesVersion((v) => v + 1)} />

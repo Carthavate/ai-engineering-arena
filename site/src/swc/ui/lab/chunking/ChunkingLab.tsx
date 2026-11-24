@@ -11,6 +11,7 @@ import { ChunkedText } from "./ChunkedText";
 import { AnswerPanel, ChunkInspector } from "./ChunkPanels";
 import "../blueprint.css";
 import "./chunking.css";
+import { useRte } from "../../../../rte/RteContext";
 
 type Strategy = "fixed" | "recursive" | "semantic";
 
@@ -38,6 +39,7 @@ interface Embedded {
 
 /** The Lab's chunking explorer: cut a document three ways and see what each cut breaks. */
 export function ChunkingLab() {
+  const { embedder } = useRte();
   const [strategy, setStrategy] = useState<Strategy>("fixed");
   const [size, setSize] = useState<number>(SIZE.start);
   const [overlap, setOverlap] = useState(0);
@@ -115,7 +117,7 @@ export function ChunkingLab() {
         {strategy === "semantic" && !semantic && (
           <div className="ck-embed">
             <button type="button" className="btn btn-primary btn-small" onClick={() => void embedSentences()} disabled={load.busy}>Embed the sentences</button>
-            <span className="peek-dim">Runs a real embedding model in your browser (downloads about 23 MB once, then it's cached).</span>
+            <span className="peek-dim">{embedder.info.detail}</span>
             <LoadNote load={load} />
           </div>
         )}

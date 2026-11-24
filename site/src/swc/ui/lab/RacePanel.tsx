@@ -36,7 +36,7 @@ export function RacePanel({ data }: { readonly data: LabData }) {
         {rivals.map((r) => (
           <button key={r.id} type="button" className="rival" onClick={() => void race(r.id)} disabled={busy !== null} style={{ ["--player" as string]: data.colorOf(r.id) }}>
             <Avatar member={r} size={44} color={data.colorOf(r.id)} />
-            <span className="rival-name">{r.display_name || r.github_username}</span>
+            <span className="rival-name">{r.display_name || r.handle}</span>
             <span className="rival-cta">{busy === r.id ? "Sending…" : "Race"}</span>
           </button>
         ))}

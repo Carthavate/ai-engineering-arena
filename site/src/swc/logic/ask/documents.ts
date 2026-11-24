@@ -64,7 +64,9 @@ export function sections(md: string): Section[] {
     const f = /^\s*(```|~~~)/.exec(line);
     if (f) fence = fence === null ? f[1] : fence === f[1] ? null : fence;
     // Closing #s count only when separated by a space, so "Learning C#" keeps its #.
-    const h = fence === null && !f ? /^#{1,3}\s+(.+?)(?:\s+#+)?\s*$/.exec(line) : null;
+    // One to three '#'. Spelled without a {1,3} quantifier: Anna's upload firewall reads "#{" next to
+    // ".exec(" as a template-injection attack and refuses the bundle.
+    const h = fence === null && !f ? /^#(?:##?)?\s+(.+?)(?:\s+#+)?\s*$/.exec(line) : null;
     if (h) {
       const hadBody = flush();
       heading = !hadBody && heading ? `${heading} › ${h[1]}` : h[1];

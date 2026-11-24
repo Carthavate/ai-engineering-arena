@@ -21,10 +21,10 @@ export function LessonFriends({ item, data }: { readonly item: RoadmapItem; read
             return (
               <li key={m.id}>
                 <Avatar member={m} size={28} color={data.colorOf(m.id)} />
-                <span className="lesson-friend-name">{m.github_username}</span>
+                <span className="lesson-friend-name">{m.handle}</span>
                 {finished(m.id) && <span className="solved-pill">finished</span>}
                 {s && (
-                  <span className={`score${s.score === s.total ? " perfect" : ""}`} title={`Best quiz score of ${m.github_username}`}>
+                  <span className={`score${s.score === s.total ? " perfect" : ""}`} title={`Best quiz score of ${m.handle}`}>
                     best quiz {s.score}/{s.total}
                   </span>
                 )}

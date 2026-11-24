@@ -55,7 +55,7 @@ export function DuelArena({ duel, me, rival, itemTitle, duels, entries, colorOf,
   const retryRef = useRef<number | undefined>(undefined);
   const celebrated = useRef(false);
   const serverNow = tick + offset;
-  const rivalName = rival?.display_name || rival?.github_username || "your rival";
+  const rivalName = rival?.display_name || rival?.handle || "your rival";
   const done = duel.status === "done";
 
   useEffect(() => {

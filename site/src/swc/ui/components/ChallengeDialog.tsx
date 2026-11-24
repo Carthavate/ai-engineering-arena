@@ -49,7 +49,7 @@ export function ChallengeDialog({ item, rivals, colorOf, create, onCreated, onCl
           {rivals.map((r) => (
             <button key={r.id} type="button" className="rival" onClick={() => void pick(r)} disabled={busy !== null} style={{ ["--player" as string]: colorOf(r.id) }}>
               <Avatar member={r} size={48} color={colorOf(r.id)} />
-              <span className="rival-name">{r.display_name || r.github_username}</span>
+              <span className="rival-name">{r.display_name || r.handle}</span>
               <span className="rival-cta">{busy === r.id ? "Setting up…" : "Challenge"}</span>
             </button>
           ))}

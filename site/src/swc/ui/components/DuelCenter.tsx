@@ -77,7 +77,7 @@ export function DuelCenter({ me, duels, memberById, colorOf, hidden, onHide, onT
       if (before === d.status) continue;
       seen.current.set(d.id, d.status);
       const rival = memberById(d.challenger === me.id ? d.opponent : d.challenger);
-      const name = rival?.display_name || rival?.github_username || "Someone";
+      const name = rival?.display_name || rival?.handle || "Someone";
       if (d.status === "pending" && d.opponent === me.id && before === undefined) {
         notify(`${name} challenges you to a ${d.kind === "code" ? "code race" : "duel"}!`, `${itemTitle(d)} · open the lab to accept`);
         document.title = "(!) Duel challenge · AI Engineering Arena";
@@ -146,7 +146,7 @@ export function DuelCenter({ me, duels, memberById, colorOf, hidden, onHide, onT
 
   if (!current || (current.state === "invite-in" && hidden.has(current.duel.id))) return null;
   const rival = memberById(current.rivalId);
-  const rivalName = rival?.display_name || rival?.github_username || "Someone";
+  const rivalName = rival?.display_name || rival?.handle || "Someone";
   const secondsLeft = Math.max(0, Math.ceil((new Date(current.duel.created_at).getTime() + INVITE_TTL_MS - now) / 1000));
   const left = `${Math.floor(secondsLeft / 60)}:${String(secondsLeft % 60).padStart(2, "0")}`;
 

@@ -28,10 +28,14 @@ Roadmap content lives in `src/roadmap.ts`. Item ids (`p3-4`) are stored in the d
    - Homepage URL: `https://carthavate.github.io/ai-engineering-arena/`
    - Authorization callback URL: `https://<project-ref>.supabase.co/auth/v1/callback`
 4. **Supabase → Authentication → Sign In / Providers → GitHub:** enable, paste the OAuth app's Client ID and Client secret.
-5. **Supabase → Authentication → URL Configuration:**
+5. **Google sign-in** ([ADR-0013](../docs/adr/0013-google-sign-in-and-player-names.md)):
+   - Google Cloud Console → APIs & Services → OAuth consent screen: app name "AI Engineering Arena", External, with the scopes `openid`, `email` and `profile` only.
+   - Credentials → Create credentials → OAuth client ID → Web application. Authorized redirect URI: `https://<project-ref>.supabase.co/auth/v1/callback`.
+   - Supabase → Authentication → Sign In / Providers → Google: enable, paste the client's Client ID and Client secret.
+6. **Supabase → Authentication → URL Configuration:**
    - Site URL: `https://carthavate.github.io/ai-engineering-arena/`
    - Redirect URLs: add `https://carthavate.github.io/ai-engineering-arena/` and `http://localhost:5173/ai-engineering-arena/`
-6. **GitHub repo → Settings → Secrets and variables → Actions → Variables:** add `SUPABASE_URL` and `SUPABASE_ANON_KEY` (Supabase → Project Settings → API). These are public values; never put the `service_role` key anywhere in this repo.
+7. **GitHub repo → Settings → Secrets and variables → Actions → Variables:** add `SUPABASE_URL` and `SUPABASE_ANON_KEY` (Supabase → Project Settings → API). These are public values; never put the `service_role` key anywhere in this repo.
 
 Supabase pauses a free project after 7 days without activity. The `Keep Supabase awake` workflow (`.github/workflows/keep-supabase-awake.yml`) reads one row twice a week with these same variables, so the project stays awake even when nobody visits the site.
 

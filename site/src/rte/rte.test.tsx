@@ -3,7 +3,7 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it } from "vitest";
-import { fail, ok, type ChallengeSolve } from "../swc/logic/types";
+import { fail, ok, type ChallengeSolve, type Profile } from "../swc/logic/types";
 import type { ProgressRow } from "../swc/logic/progress";
 import type { Rte } from "./ports";
 import { RteProvider } from "./RteContext";
@@ -12,9 +12,12 @@ import { useSolves } from "./useSolves";
 import { useAskCourse } from "./useAskCourse";
 import { useLessonNote } from "./useLessonNote";
 import { usePlayers } from "./usePlayers";
+import { useAuth } from "./useAuth";
 import { findRoadmapItem } from "../swc/logic/activity";
 import type { PersonalNote } from "../swc/logic/ask/documents";
 import type { LibraryPort } from "./ports";
+
+const MODEL = { label: "the test model", detail: "A fake model." };
 
 /** A fake Rte: only the ports a test touches need real behavior. */
 function fakeRte(overrides: Partial<Rte>): Rte {
@@ -84,12 +87,14 @@ describe("useAskCourse through fake models", () => {
     const store = new Map<string, readonly number[]>();
     return fakeRte({
       embedder: {
+        info: MODEL,
         embed: async (texts) => {
           calls.embedded += texts.length;
           return texts.map(toyEmbed);
         },
       },
       llm: {
+        info: MODEL,
         load: async () => "wasm",
         generate: async (messages, _max, cb) => {
           const last = messages.at(-1)!.content;
@@ -101,6 +106,7 @@ describe("useAskCourse through fake models", () => {
         stop: () => undefined,
       },
       library: {
+        privacy: { badge: "Private", detail: "Kept in the test" },
         loadNotes: async () => [],
         saveNote: async () => true,
         deleteNote: async () => undefined,
@@ -163,13 +169,15 @@ describe("useAskCourse controls", () => {
     const gate = new Promise<void>((r) => { release = r; });
     let generated = 0;
     const rte = fakeRte({
-      embedder: { embed: async (texts) => texts.map(toy) },
+      embedder: { info: MODEL, embed: async (texts) => texts.map(toy) },
       llm: {
+        info: MODEL,
         load: async () => { await gate; return "wasm"; },
         generate: async () => { generated += 1; return "x"; },
         stop: () => undefined,
       },
       library: {
+        privacy: { badge: "Private", detail: "Kept in the test" },
         loadNotes: async () => [],
         saveNote: async () => false,
         deleteNote: async () => undefined,
@@ -202,6 +210,7 @@ function memoryLibrary(initial: readonly PersonalNote[] = []) {
   const vectors = new Map<string, readonly number[]>();
   const log = { saved: [] as PersonalNote[], deleted: [] as string[], forgotten: [] as string[] };
   const port: LibraryPort = {
+    privacy: { badge: "Private", detail: "Kept in the test" },
     loadNotes: async () => [...notes.values()],
     saveNote: async (n) => { notes.set(n.id, n); log.saved.push(n); return true; },
     deleteNote: async (id) => { notes.delete(id); log.deleted.push(id); },
@@ -221,8 +230,8 @@ describe("useAskCourse scoped to one lesson", () => {
   function setup() {
     const lib = memoryLibrary([lessonNote, otherNote]);
     const rte = fakeRte({
-      embedder: { embed: async (texts) => texts.map(toy) },
-      llm: { load: async () => "wasm", generate: async () => "Tables are kept as HTML [1].", stop: () => undefined },
+      embedder: { info: MODEL, embed: async (texts) => texts.map(toy) },
+      llm: { info: MODEL, load: async () => "wasm", generate: async () => "Tables are kept as HTML [1].", stop: () => undefined },
       library: lib.port,
     });
     return renderHook(() => useAskCourse(), { wrapper: wrapper(rte) });
@@ -329,11 +338,13 @@ describe("usePlayers through the PlayersPort", () => {
       players: {
         overview: async () => { overviews++; return ok({ waiting: [], declined: [], invited: [] }); },
         invite: async () => ok({ signedIn: false }),
+        cancelInvite: async () => ok(null),
+        letIn: async () => ok(null),
         remove: async () => ok(null),
         decline: async () => ok(null),
-        delete: async (github) => {
-          deleted.push(github);
-          return github === "boss" ? fail("Admins can't be deleted") : ok(null);
+        delete: async (handle) => {
+          deleted.push(handle);
+          return handle === "boss" ? fail("Admins can't be deleted") : ok(null);
         },
       },
     });
@@ -349,5 +360,71 @@ describe("usePlayers through the PlayersPort", () => {
     await act(async () => { expect(await result.current.delete("boss")).toEqual(fail("Admins can't be deleted")); });
     expect(overviews).toBe(loaded + 1);
     expect(boardReloads).toBe(1);
+  });
+
+  it("lets a waiting player in by name and reloads the board; cancelling an invite leaves the board alone", async () => {
+    const calls: string[] = [];
+    let boardReloads = 0;
+    const rte = fakeRte({
+      players: {
+        overview: async () => ok({ waiting: [], declined: [], invited: [] }),
+        invite: async () => ok({ signedIn: false }),
+        cancelInvite: async (github) => { calls.push(`cancel ${github}`); return ok(null); },
+        letIn: async (handle) => { calls.push(`let in ${handle}`); return ok(null); },
+        remove: async () => ok(null),
+        decline: async () => ok(null),
+        delete: async () => ok(null),
+      },
+    });
+    const { result } = renderHook(() => usePlayers(true, () => { boardReloads++; }), { wrapper: wrapper(rte) });
+    await waitFor(() => expect(result.current.overview).not.toBeNull());
+
+    await act(async () => { await result.current.letIn("Skywalker"); });
+    await act(async () => { await result.current.cancelInvite("future-friend"); });
+    expect(calls).toEqual(["let in Skywalker", "cancel future-friend"]);
+    expect(boardReloads).toBe(1);
+  });
+});
+
+describe("useAuth through the AuthPort", () => {
+  const nameless: Profile = { id: "u", handle: "", github_username: "", display_name: null, avatar_url: null, is_member: false };
+
+  function authRte(reloads: ReadonlyArray<Profile | null>) {
+    const claimed: string[] = [];
+    let loads = 0;
+    const rte = fakeRte({
+      auth: {
+        currentSession: async () => ({ userId: "u" }),
+        onSessionChange: () => () => undefined,
+        // The first load is the sign-in; later ones replay `reloads`.
+        loadProfile: async () => (loads++ === 0 ? nameless : reloads[Math.min(loads - 2, reloads.length - 1)] ?? null),
+        watchProfile: () => () => undefined,
+        signIn: async () => undefined,
+        signOut: async () => undefined,
+        claimHandle: async (name) => { claimed.push(name); return name === "taken" ? fail("That player name is taken") : ok(name); },
+      },
+    });
+    return { rte, claimed };
+  }
+
+  it("claims a name and picks up what the database made of the profile", async () => {
+    const { rte, claimed } = authRte([{ ...nameless, handle: "Sky", is_member: true }]);
+    const { result } = renderHook(() => useAuth(), { wrapper: wrapper(rte) });
+    await waitFor(() => expect(result.current.profile?.handle).toBe(""));
+
+    await act(async () => { expect(await result.current.claimHandle("taken")).toEqual(fail("That player name is taken")); });
+    expect(result.current.profile?.handle).toBe("");
+
+    await act(async () => { expect(await result.current.claimHandle("Sky")).toEqual(ok("Sky")); });
+    expect(claimed).toEqual(["taken", "Sky"]);
+    expect(result.current.profile).toMatchObject({ handle: "Sky", is_member: true });
+  });
+
+  it("keeps the new name if reloading the profile fails", async () => {
+    const { rte } = authRte([null]);
+    const { result } = renderHook(() => useAuth(), { wrapper: wrapper(rte) });
+    await waitFor(() => expect(result.current.profile?.handle).toBe(""));
+    await act(async () => { await result.current.claimHandle("Sky"); });
+    expect(result.current.profile).toMatchObject({ id: "u", handle: "Sky" });
   });
 });

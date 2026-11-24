@@ -2,7 +2,7 @@
 // A persistent Python kernel for the scratchpad: variables survive between cells, like a notebook.
 // Packages (numpy, pandas, matplotlib, scikit-learn...) are installed on first import.
 
-import { PYODIDE_INDEX_URL } from "./pyodide";
+import { PYODIDE_CDN_URL, PYODIDE_INDEX_URL } from "./pyodide";
 
 interface PyodideApi {
   runPython(code: string): unknown;
@@ -74,7 +74,7 @@ let pyodide: Promise<PyodideApi> | null = null;
 
 async function boot(): Promise<PyodideApi> {
   const mod = await import(/* @vite-ignore */ `${PYODIDE_INDEX_URL}pyodide.mjs`);
-  const py: PyodideApi = await mod.loadPyodide({ indexURL: PYODIDE_INDEX_URL });
+  const py: PyodideApi = await mod.loadPyodide({ indexURL: PYODIDE_INDEX_URL, packageBaseUrl: PYODIDE_CDN_URL });
   py.runPython(KERNEL);
   return py;
 }

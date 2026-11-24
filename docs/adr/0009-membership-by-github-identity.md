@@ -1,6 +1,6 @@
 # ADR-0009: Players join by GitHub identity, approved by admins, without repo access
 
-- **Status:** Accepted
+- **Status:** Accepted, amended by [ADR-0013](0013-google-sign-in-and-player-names.md) (Google sign-in, player names)
 - **Date:** 2026-10-06
 
 ## Context

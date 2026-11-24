@@ -78,7 +78,7 @@ export function RoadmapPage({ data, phaseId }: { readonly data: LabData; readonl
             return (
               <div key={m.id} className="crew-row" style={{ ["--player" as string]: data.colorOf(m.id) }}>
                 <Avatar member={m} size={26} color={data.colorOf(m.id)} />
-                <span className="crew-name">{m.github_username}</span>
+                <span className="crew-name">{m.handle}</span>
                 <span className="crew-bar"><i style={{ width: `${pct}%` }} /></span>
                 <span className="crew-num">{d}/{ids.length}</span>
               </div>

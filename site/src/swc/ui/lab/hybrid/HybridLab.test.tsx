@@ -10,6 +10,7 @@ afterEach(cleanup);
 /** Meaning stand-in: each text points at the first topic word it contains. */
 const TOPICS: readonly RegExp[] = [/refund|money|return/i, /rain|wet|IPX5/i, /freez|cold|winter/i, /brake|BP-4471/i];
 const fakeEmbedder = {
+  info: { label: "a test embedder", detail: "Runs a test embedder." },
   embed: async (texts: readonly string[]) => texts.map((t) => {
     const hit = TOPICS.findIndex((re) => re.test(t));
     return TOPICS.map((_, i) => (i === hit ? 1 : 0.01));

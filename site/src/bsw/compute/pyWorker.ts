@@ -2,7 +2,7 @@
 // Runs player code in Pyodide (CPython compiled to WebAssembly), off the main thread.
 // The main thread kills this worker if a run takes too long (e.g. an infinite loop).
 
-import { PYODIDE_INDEX_URL as INDEX_URL } from "./pyodide";
+import { PYODIDE_CDN_URL, PYODIDE_INDEX_URL as INDEX_URL } from "./pyodide";
 
 interface RunMessage {
   readonly id: number;
@@ -22,7 +22,7 @@ let ready = false;
 
 async function boot(harnessUrl: string): Promise<PyodideApi> {
   const mod = await import(/* @vite-ignore */ `${INDEX_URL}pyodide.mjs`);
-  const py: PyodideApi = await mod.loadPyodide({ indexURL: INDEX_URL });
+  const py: PyodideApi = await mod.loadPyodide({ indexURL: INDEX_URL, packageBaseUrl: PYODIDE_CDN_URL });
   const res = await fetch(harnessUrl);
   if (!res.ok) throw new Error(`Couldn't load the test harness (${res.status})`);
   py.runPython(await res.text());
