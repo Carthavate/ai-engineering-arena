@@ -20,7 +20,7 @@ if (!window.opener) {
   window.opener.postMessage(message, ANNA_ORIGIN);
   show(`Sign-in failed: ${message.error}`);
 } else if (finish) {
-  show("Only continue if you just clicked \"Sign in with GitHub\" in the AI Engineering Arena app in Anna.");
+  show("Only continue if you just clicked Sign in in the AI Engineering Arena app in Anna.");
   finish.hidden = false;
   finish.addEventListener("click", () => {
     window.opener?.postMessage(message, ANNA_ORIGIN);

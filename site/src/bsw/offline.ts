@@ -13,6 +13,7 @@ export const offline = {
     watchProfile: none,
     signIn: async () => undefined,
     signOut: async () => undefined,
+    claimHandle: async () => fail(OFFLINE),
   } satisfies AuthPort,
   progress: {
     loadMembers: async () => ok([]),
@@ -49,6 +50,8 @@ export const offline = {
   players: {
     overview: async () => fail(OFFLINE),
     invite: async () => fail(OFFLINE),
+    cancelInvite: async () => fail(OFFLINE),
+    letIn: async () => fail(OFFLINE),
     remove: async () => fail(OFFLINE),
     decline: async () => fail(OFFLINE),
     delete: async () => fail(OFFLINE),

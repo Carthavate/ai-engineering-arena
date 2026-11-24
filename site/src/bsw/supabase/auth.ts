@@ -1,13 +1,14 @@
 import type { Session, SupabaseClient } from "@supabase/supabase-js";
 import type { AuthPort } from "../../rte/ports";
-import type { AuthSession, Profile } from "../../swc/logic/types";
+import { ok, type AuthSession, type Profile } from "../../swc/logic/types";
+import { failed } from "./errors";
 import { watchTables } from "./realtime";
 
 function toSession(s: Session | null): AuthSession | null {
   return s ? { userId: s.user.id } : null;
 }
 
-/** GitHub sign-in through Supabase Auth. */
+/** GitHub or Google sign-in through Supabase Auth. */
 export function supabaseAuth(client: SupabaseClient): AuthPort {
   return {
     async currentSession() {
@@ -36,15 +37,20 @@ export function supabaseAuth(client: SupabaseClient): AuthPort {
       return watchTables(client, `my-profile-${userId}`, [{ table: "profiles", filter: `id=eq.${userId}`, on: cb }]);
     },
 
-    async signIn() {
+    async signIn(provider) {
       const redirectTo = window.location.origin + import.meta.env.BASE_URL;
-      const { error } = await client.auth.signInWithOAuth({ provider: "github", options: { redirectTo } });
-      if (error) console.error("GitHub sign-in failed", error);
+      const { error } = await client.auth.signInWithOAuth({ provider, options: { redirectTo } });
+      if (error) console.error(`Sign-in with ${provider} failed`, error);
     },
 
     async signOut() {
       const { error } = await client.auth.signOut();
       if (error) console.error("Sign-out failed", error);
+    },
+
+    async claimHandle(name) {
+      const { data, error } = await client.rpc("claim_handle", { p_handle: name });
+      return error ? failed("claim_handle", error, "Couldn't save that name. Try again.") : ok(data as string);
     },
   };
 }

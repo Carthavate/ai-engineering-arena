@@ -79,7 +79,7 @@ describe("signInWithPopup", () => {
   it("sends the popup to GitHub sign-in and exchanges the code the website posts back", async () => {
     const { client, auth } = fakeClient();
     const popup = { closed: false, location: { href: "about:blank" }, close: vi.fn() } as unknown as Window;
-    const done = signInWithPopup(client, popup);
+    const done = signInWithPopup(client, popup, "github");
     await vi.waitFor(() => expect(popup.location.href).toBe("https://supabase.example/authorize?provider=github"));
     // A message from another window on the website's origin is ignored; the popup's own is accepted.
     window.dispatchEvent(new MessageEvent("message", { data: { type: "arena-auth", code: "other" }, origin: CALLBACK_ORIGIN, source: window }));
@@ -92,11 +92,22 @@ describe("signInWithPopup", () => {
     expect(auth.exchangeCodeForSession).toHaveBeenCalledWith("one-time");
   });
 
+  it("signs in with Google the same way", async () => {
+    const { client, auth } = fakeClient();
+    const popup = { closed: false, location: { href: "about:blank" }, close: vi.fn() } as unknown as Window;
+    const done = signInWithPopup(client, popup, "google");
+    await vi.waitFor(() => expect(popup.location.href).not.toBe("about:blank"));
+    window.dispatchEvent(new MessageEvent("message", { data: { type: "arena-auth", code: "g-code" }, origin: CALLBACK_ORIGIN, source: popup as unknown as MessageEventSource }));
+    await done;
+    expect(auth.signInWithOAuth).toHaveBeenCalledWith(expect.objectContaining({ provider: "google" }));
+    expect(auth.exchangeCodeForSession).toHaveBeenCalledWith("g-code");
+  });
+
   it("ignores codes from any other origin and fails when the popup is closed", async () => {
     vi.useFakeTimers();
     const { client, auth } = fakeClient();
     const popup = { closed: false, location: { href: "about:blank" }, close: vi.fn() } as unknown as Window & { closed: boolean };
-    const done = signInWithPopup(client, popup);
+    const done = signInWithPopup(client, popup, "github");
     const outcome = expect(done).rejects.toThrow(/closed before you finished/);
     await vi.advanceTimersByTimeAsync(0);
     window.dispatchEvent(new MessageEvent("message", { data: { type: "arena-auth", code: "stolen" }, origin: "https://anna.partners" }));

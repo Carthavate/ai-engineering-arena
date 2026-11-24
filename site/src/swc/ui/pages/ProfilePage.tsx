@@ -20,7 +20,7 @@ const PHASE_FOLDERS: Record<string, string> = {
 
 export function ProfilePage({ data, username }: { readonly data: LabData; readonly username: string }) {
   const [sharing, setSharing] = useState(false);
-  const member = data.members.find((m) => m.github_username.toLowerCase() === username.toLowerCase());
+  const member = data.members.find((m) => m.handle.toLowerCase() === username.toLowerCase());
   if (!member) {
     return (
       <div className="page">
@@ -55,9 +55,11 @@ export function ProfilePage({ data, username }: { readonly data: LabData; readon
             {rank > 0 && <span className="rank-pill">Rank #{rank}</span>}
             {isMe && <span className="tag-you">you</span>}
           </p>
-          <h1>{member.display_name || member.github_username}</h1>
+          <h1>{member.display_name || member.handle}</h1>
           <p className="profile-handle">
-            <a href={`https://github.com/${member.github_username}`} target="_blank" rel="noopener">@{member.github_username} on GitHub ↗</a>
+            {member.github_username
+              ? <a href={`https://github.com/${member.github_username}`} target="_blank" rel="noopener">@{member.github_username} on GitHub ↗</a>
+              : <>@{member.handle}</>}
           </p>
           {stats && (
             <div className="xp profile-xp">
@@ -70,7 +72,7 @@ export function ProfilePage({ data, username }: { readonly data: LabData; readon
           )}
           {stats && (
             <button type="button" className="btn btn-primary share-btn" onClick={() => setSharing(true)}>
-              {isMe ? "Share my card" : `Make ${member.display_name || member.github_username}'s card`}
+              {isMe ? "Share my card" : `Make ${member.display_name || member.handle}'s card`}
             </button>
           )}
         </div>
@@ -112,7 +114,9 @@ export function ProfilePage({ data, username }: { readonly data: LabData; readon
                     </div>
                     <span className="crew-bar"><i style={{ width: `${pct}%` }} /></span>
                   </div>
-                  <a className="journey-repo" href={`${REPO}/${PHASE_FOLDERS[p.id]}/${member.github_username}`} target="_blank" rel="noopener" title="Their code for this phase on GitHub">code ↗</a>
+                  {member.github_username && (
+                    <a className="journey-repo" href={`${REPO}/${PHASE_FOLDERS[p.id]}/${member.github_username}`} target="_blank" rel="noopener" title="Their code for this phase on GitHub">code ↗</a>
+                  )}
                 </li>
               );
             })}
@@ -159,7 +163,7 @@ export function ProfilePage({ data, username }: { readonly data: LabData; readon
 
       {sharing && stats && (
         <ShareDialog
-          input={{ name: member.display_name || member.github_username, handle: member.github_username, stats, record }}
+          input={{ name: member.display_name || member.handle, handle: member.handle, stats, record }}
           avatarUrl={member.avatar_url}
           color={color}
           onClose={() => setSharing(false)}

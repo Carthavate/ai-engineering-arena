@@ -2,15 +2,18 @@ import { useCallback, useEffect, useState } from "react";
 import type { Outcome, PlayersOverview } from "../swc/logic/types";
 import { useRte } from "./RteContext";
 
+/** Admin actions. Players are named by their handle; invites ahead of sign-up by GitHub username. */
 export interface PlayersAdmin {
   readonly overview: PlayersOverview | null;
   readonly error: string | null;
   readonly refresh: () => Promise<void>;
   readonly invite: (github: string) => Promise<Outcome<{ readonly signedIn: boolean }>>;
-  readonly remove: (github: string) => Promise<Outcome<null>>;
-  readonly decline: (github: string) => Promise<Outcome<null>>;
+  readonly cancelInvite: (github: string) => Promise<Outcome<null>>;
+  readonly letIn: (handle: string) => Promise<Outcome<null>>;
+  readonly remove: (handle: string) => Promise<Outcome<null>>;
+  readonly decline: (handle: string) => Promise<Outcome<null>>;
   /** For good: their account and every row that mentions them. */
-  readonly delete: (github: string) => Promise<Outcome<null>>;
+  readonly delete: (handle: string) => Promise<Outcome<null>>;
 }
 
 /** Admin-only player management. Pass enabled=false for everyone else (no calls are made). */
@@ -48,9 +51,11 @@ export function usePlayers(enabled: boolean, onChanged: () => void): PlayersAdmi
   }, [refresh, onChanged]);
 
   const invite = useCallback((github: string) => act(true, () => players.invite(github))(), [act, players]);
-  const remove = useCallback((github: string) => act(true, () => players.remove(github))(), [act, players]);
-  const decline = useCallback((github: string) => act(false, () => players.decline(github))(), [act, players]);
-  const deleteForGood = useCallback((github: string) => act(true, () => players.delete(github))(), [act, players]);
+  const cancelInvite = useCallback((github: string) => act(false, () => players.cancelInvite(github))(), [act, players]);
+  const letIn = useCallback((handle: string) => act(true, () => players.letIn(handle))(), [act, players]);
+  const remove = useCallback((handle: string) => act(true, () => players.remove(handle))(), [act, players]);
+  const decline = useCallback((handle: string) => act(false, () => players.decline(handle))(), [act, players]);
+  const deleteForGood = useCallback((handle: string) => act(true, () => players.delete(handle))(), [act, players]);
 
-  return { overview, error, refresh, invite, remove, decline, delete: deleteForGood };
+  return { overview, error, refresh, invite, cancelInvite, letIn, remove, decline, delete: deleteForGood };
 }

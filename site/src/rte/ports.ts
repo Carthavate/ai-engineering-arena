@@ -12,7 +12,7 @@ import type { ChatMessage, LlmCallbacks, LlmDevice, ModelInfo } from "../swc/log
 import type { Tokenized } from "../swc/logic/lab/tokenizer";
 import type { Vec } from "../swc/logic/lab/vectors";
 import type { PersonalNote } from "../swc/logic/ask/documents";
-import type { AuthSession, ChallengeSolve, DuelGraded, DuelStart, GradedQuiz, OpenQuiz, Outcome, PlayersOverview, Profile, RaceSubmitted } from "../swc/logic/types";
+import type { AuthSession, ChallengeSolve, DuelGraded, DuelStart, GradedQuiz, OpenQuiz, Outcome, PlayersOverview, Profile, RaceSubmitted, SignInProvider } from "../swc/logic/types";
 
 /** Stops a subscription. */
 export type Unsubscribe = () => void;
@@ -24,8 +24,10 @@ export interface AuthPort {
   loadProfile(userId: string): Promise<Profile | null>;
   /** Fires when that profile changes (e.g. an admin lets them in). */
   watchProfile(userId: string, cb: () => void): Unsubscribe;
-  signIn(): Promise<void>;
+  signIn(provider: SignInProvider): Promise<void>;
   signOut(): Promise<void>;
+  /** Pick the player name, once (a Google sign-up, or a GitHub one whose username was taken). Returns it. */
+  claimHandle(name: string): Promise<Outcome<string>>;
 }
 
 export interface ProgressPort {
@@ -84,13 +86,18 @@ export interface LivePort {
   join<T>(topic: string, onMessage: (message: T) => void): LiveChannel<T>;
 }
 
+/** Admin-only. Players are named by their handle; invites ahead of sign-up by GitHub username. */
 export interface PlayersPort {
   overview(): Promise<Outcome<PlayersOverview>>;
   invite(github: string): Promise<Outcome<{ readonly signedIn: boolean }>>;
-  remove(github: string): Promise<Outcome<null>>;
-  decline(github: string): Promise<Outcome<null>>;
+  /** Take back an invite nobody has signed in with yet. */
+  cancelInvite(github: string): Promise<Outcome<null>>;
+  /** Make someone who signed in (waiting or declined) a player. */
+  letIn(handle: string): Promise<Outcome<null>>;
+  remove(handle: string): Promise<Outcome<null>>;
+  decline(handle: string): Promise<Outcome<null>>;
   /** Erase the account and everything that mentions it, duels against others included. */
-  delete(github: string): Promise<Outcome<null>>;
+  delete(handle: string): Promise<Outcome<null>>;
 }
 
 export interface SolvesPort {

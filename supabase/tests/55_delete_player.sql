@@ -58,7 +58,7 @@ select tests.as_user(:'boss');
 select tests.throws($$select public.delete_player('boss')$$, 'can''t be deleted');
 select tests.throws($$select public.delete_player('twadi')$$, 'can''t be deleted');
 select tests.throws($$select public.delete_player('  ')$$, 'not a valid');
-select tests.throws($$select public.delete_player('nobody-here')$$, 'Nobody with that username');
+select tests.throws($$select public.delete_player('nobody-here')$$, 'Nobody with that player name');
 
 -- Delete pal (case-insensitive): everything with their name on it goes.
 select public.delete_player(' PAL ');
@@ -89,19 +89,18 @@ select tests.eq((select is_member from public.profiles where github_username = '
 select tests.eq((select count(*) from public.progress p join public.profiles f on f.id = p.user_id
                   where f.github_username = 'pal')::int, 0, 'with no history');
 
--- An invite nobody used yet can be deleted too.
+-- An invite nobody used yet isn't a player: it is cancelled (cancel_invite), not deleted.
 select tests.as_user(:'boss');
 select public.invite_player('later-friend');
-select public.delete_player('later-friend');
-select tests.eq((public.lab_admin_overview() -> 'invited') ? 'later-friend', false, 'invite deleted');
+select tests.throws($$select public.delete_player('later-friend')$$, 'Nobody with that player name');
 
 -- Every delete leaves one private audit line, and an admin can delete only 5 players a day.
 select tests.as_postgres();
 select tests.eq((select string_agg(target, ',' order by id) from private.admin_log where actor = :'boss' and action = 'delete_player'),
-                'PAL,later-friend', 'audit lines');
-insert into private.admin_log (actor, action, target) select :'boss', 'delete_player', 'old-' || g from generate_series(1, 3) g;
+                'pal', 'audit line');
+insert into private.admin_log (actor, action, target) select :'boss', 'delete_player', 'old-' || g from generate_series(1, 4) g;
+select tests.user('one-more');
 select tests.as_user(:'boss');
-select public.invite_player('one-more');
 select tests.throws($$select public.delete_player('one-more')$$, 'deleted 5 players in 24 hours');
 select tests.as_postgres();
 rollback;

@@ -101,7 +101,7 @@ export default function RaceArena({ duel, me, rival, duels, entries, colorOf, on
   const retryRef = useRef<number | undefined>(undefined);
   const celebrated = useRef(false);
   const serverNow = tick + offset;
-  const rivalName = rival?.display_name || rival?.github_username || "your rival";
+  const rivalName = rival?.display_name || rival?.handle || "your rival";
   const decided = duel.status === "done" || duel.status === "expired";
   const won = duel.status === "done" && duel.winner === me.id;
   const solutions = useSolutions(duelPort, duel.id, decided);

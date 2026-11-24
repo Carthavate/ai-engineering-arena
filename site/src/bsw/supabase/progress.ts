@@ -9,7 +9,8 @@ import { watchTables } from "./realtime";
 export function supabaseProgress(client: SupabaseClient): ProgressPort {
   return {
     async loadMembers() {
-      const { data, error } = await client.from("profiles").select("*").eq("is_member", true).order("created_at");
+      // A player shows up once they have a name (links and labels use it).
+      const { data, error } = await client.from("profiles").select("*").eq("is_member", true).neq("handle", "").order("created_at");
       return error ? failed("Loading players", error, "Couldn't load the players.") : ok(data as Profile[]);
     },
 

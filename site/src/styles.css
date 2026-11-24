@@ -109,6 +109,10 @@ h1, h2, h3 { font-family: var(--font-display); font-weight: 400; letter-spacing:
 .topbar-auth { display: flex; gap: 10px; align-items: center; }
 .me-chip { display: flex; align-items: center; gap: 6px; text-decoration: none; color: var(--ink); }
 .me-level { font: 600 12px var(--font-mono); background: var(--ink); color: var(--bg); padding: 2px 8px; border-radius: 999px; }
+.signin { display: flex; gap: 8px; align-items: center; }
+.signin-label { font-weight: 700; color: var(--muted); white-space: nowrap; }
+.name-picker { margin: 0 0 20px; display: grid; gap: 10px; }
+.name-picker p { margin: 0; }
 
 /* Avatars */
 .avatar { border-radius: 50%; border: 3px solid var(--ring, var(--edge)); background: var(--card-2); flex: none; object-fit: cover; display: inline-block; }
@@ -357,6 +361,7 @@ dialog.quiz::backdrop { background: rgb(18 20 41 / 0.6); }
 /* Small screens */
 @media (max-width: 720px) {
   .topbar { gap: 10px; position: static; }
+  .signin-label { display: none; }
   .nav { order: 3; flex-basis: 100%; }
   .hero { grid-template-columns: 1fr; padding: 24px 20px; }
   .hero-sticker { position: absolute; top: 14px; right: 14px; width: 84px; height: 84px; }

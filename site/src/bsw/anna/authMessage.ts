@@ -31,5 +31,5 @@ export function callbackMessage(href: string): AuthMessage {
   if (code) return { type: "arena-auth", code };
   const error =
     url.searchParams.get("error_description") ?? hash.get("error_description") ?? url.searchParams.get("error") ?? hash.get("error");
-  return { type: "arena-auth", error: error ?? "GitHub didn't send a sign-in code." };
+  return { type: "arena-auth", error: error ?? "The sign-in page didn't send a sign-in code." };
 }

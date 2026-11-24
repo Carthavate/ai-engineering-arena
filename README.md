@@ -24,7 +24,7 @@ We know how self-study usually goes: a strong first week, then life gets in the 
 
 What started as a progress tracker turned into a small learning platform. This repo is both: **our actual learning journey** (notes, notebooks and projects for every phase) and **the arena we built around it**. We're sharing it in case it helps someone else learn with a friend, and because building it taught us almost as much as the courses did.
 
-Friends are welcome to join: sign in with GitHub, and one of us lets you in.
+Friends are welcome to join: sign in with GitHub or Google, pick a player name if asked, and one of us lets you in.
 
 ## What's inside the arena
 
@@ -79,7 +79,7 @@ Friends are welcome to join: sign in with GitHub, and one of us lets you in.
 - **Backend:** Supabase.
   - Postgres with row-level security.
   - Realtime for duels and the live feed.
-  - GitHub sign-in.
+  - GitHub or Google sign-in.
   - Quizzes, duels and races are graded and decided in the database, so nobody can fake a score.
 - **In-browser AI and Python:**
   - Pyodide for Python.

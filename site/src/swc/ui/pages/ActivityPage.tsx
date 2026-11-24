@@ -37,7 +37,7 @@ export function ActivityPage({ data }: { readonly data: LabData }) {
         <button type="button" className={`chip${who === null ? " on" : ""}`} onClick={() => setWho(null)}>Everyone</button>
         {data.members.map((m) => (
           <button key={m.id} type="button" className={`chip${who === m.id ? " on" : ""}`} onClick={() => setWho(m.id)}>
-            <Avatar member={m} size={20} color={data.colorOf(m.id)} /> {m.github_username}
+            <Avatar member={m} size={20} color={data.colorOf(m.id)} /> {m.handle}
           </button>
         ))}
       </div>

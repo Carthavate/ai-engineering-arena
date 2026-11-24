@@ -13,7 +13,8 @@ Please **don't open a public issue** for security problems. Use GitHub's private
   - Answer keys, the question bank and the member/admin lists live in a `private` schema that the public API can't see.
   - A test fixes the exact set of exposed functions and tables, so accidental exposure fails CI.
 - **Identity.**
-  - Only accounts that signed in **with GitHub** (as recorded server-side by Supabase Auth) can become players or admins.
+  - Only accounts that signed in **with GitHub or Google** (as recorded server-side by Supabase Auth) can become players, and only after an admin lets them in. Admins come only from the GitHub admin list.
+  - Player names are unique, and nobody can pick a GitHub username that an admin invited, so a Google sign-up can't pose as an invited GitHub player. A Google player's public profile has their player name only, not their Google name or photo.
   - Being a player on the site never grants access to this repository.
 - **Least privilege.** Visitors and signed-in users hold only the database privileges they need, and every table has row-level security.
 - **No secrets in the repo.**

@@ -6,6 +6,7 @@ insert into auth.users (raw_user_meta_data, raw_app_meta_data)
 values ('{"user_name": "TWadi"}', '{"provider": "email", "providers": ["email"]}');
 select tests.eq((select count(*) from public.profiles where is_admin or is_member)::int, 0, 'email impostor is neither admin nor member');
 select tests.eq((select count(*) from public.profiles where lower(github_username) = 'twadi')::int, 0, 'email impostor gets no GitHub username');
+select tests.eq((select count(*) from public.profiles where lower(handle) = 'twadi')::int, 0, 'email impostor gets no player name');
 
 -- ...so inviting the real name later can't promote the impostor either.
 select tests.user('Wadi-admin', true, true) \gset admin_

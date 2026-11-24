@@ -15,16 +15,24 @@ export function supabasePlayers(client: SupabaseClient): PlayersPort {
       if (error) return failed("invite_player", error, "Couldn't invite that player.");
       return ok({ signedIn: Boolean((data as { signed_in?: boolean }).signed_in) });
     },
-    async remove(github) {
-      const { error } = await client.rpc("remove_player", { p_github: github });
+    async cancelInvite(github) {
+      const { error } = await client.rpc("cancel_invite", { p_github: github });
+      return error ? failed("cancel_invite", error, "Couldn't cancel that invite.") : ok(null);
+    },
+    async letIn(handle) {
+      const { error } = await client.rpc("let_in_player", { p_handle: handle });
+      return error ? failed("let_in_player", error, "Couldn't let that player in.") : ok(null);
+    },
+    async remove(handle) {
+      const { error } = await client.rpc("remove_player", { p_handle: handle });
       return error ? failed("remove_player", error, "Couldn't remove that player.") : ok(null);
     },
-    async decline(github) {
-      const { error } = await client.rpc("decline_player", { p_github: github });
+    async decline(handle) {
+      const { error } = await client.rpc("decline_player", { p_handle: handle });
       return error ? failed("decline_player", error, "Couldn't decline that player.") : ok(null);
     },
-    async delete(github) {
-      const { error } = await client.rpc("delete_player", { p_github: github });
+    async delete(handle) {
+      const { error } = await client.rpc("delete_player", { p_handle: handle });
       return error ? failed("delete_player", error, "Couldn't delete that player.") : ok(null);
     },
   };
